@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="dungeon-generator.js"></script>
   <style>
     :root {
       --bg: #0d0c0f;
@@ -81,6 +82,38 @@
     }
     .msg.dm .msg-body { color: var(--text); }
     .msg.user .msg-body { color: var(--muted); }
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .toolbar button {
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .toolbar button.primary:hover { opacity: 0.9; }
+    .map-pre {
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      line-height: 1.2;
+      background: var(--surface);
+      padding: 0.75rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      margin-top: 0.75rem;
+      white-space: pre;
+    }
     .input-row {
       padding: 1rem 0 1.5rem;
       border-top: 1px solid var(--border);
@@ -131,8 +164,12 @@
 </head>
 <body>
   <div class="chat">
+    <div class="toolbar">
+      <button type="button" id="btn-generate" class="primary">Generate random dungeon</button>
+      <button type="button" id="btn-load-classic">Load Tomb of Horrors (classic)</button>
+    </div>
     <div class="messages" id="messages">
-      <p class="loading-msg" id="loading-state">Loading module…</p>
+      <p class="loading-msg" id="loading-state">Starting…</p>
     </div>
     <div class="input-row">
       <form id="form" autocomplete="off">
@@ -155,7 +192,8 @@
         areas: [],
         graphicsByNum: [],
         loading: true,
-        messageHistory: []  // { role: 'dm'|'user', content: string } for API
+        isGenerated: false,
+        messageHistory: []
       };
 
       const $ = (sel, el = document) => el.querySelector(sel);
@@ -166,12 +204,69 @@
 
       function getKeyText() {
         if (!state.module) return '';
+        if (state.isGenerated && state.module.areas) {
+          return state.areas.map(a => a.body).join('\n\n');
+        }
         let key = '';
         for (let i = 4; i <= 12; i++) {
           const p = state.module.pages.find(pp => pp.page === i);
           if (p && p.text) key += p.text + '\n';
         }
         return key;
+      }
+
+      function mapToAscii(module) {
+        if (!module.map || !module.map.cells) return '';
+        const h = module.map.height, w = module.map.width;
+        const grid = Array.from({ length: h }, () => Array(w).fill('#'));
+        module.map.cells.forEach(c => {
+          if (c.row >= 0 && c.row < h && c.col >= 0 && c.col < w) grid[c.row][c.col] = c.cell_type || '.';
+        });
+        return grid.map(row => row.join('')).join('\n');
+      }
+
+      function buildAreaBody(area) {
+        let s = area.description || '';
+        if (area.doors && area.doors.length) {
+          s += '\n\nDoors: ' + area.doors.map(d => (d.leads_to_area ? d.door_type + ' → ' + d.leads_to_area : d.door_type)).join(', ');
+        }
+        if (area.traps && area.traps.length) {
+          s += '\n\nTraps: ' + area.traps.map(t => t.kind + (t.damage ? ' — ' + t.damage : '')).join('; ');
+        }
+        if (area.clues && area.clues.length) {
+          s += '\n\nClues: ' + area.clues.map(c => c.text).join(' ');
+        }
+        return s;
+      }
+
+      function parseGeneratedAreas(module) {
+        if (!module.areas) return [];
+        return module.areas.map((a, i) => ({
+          num: i + 1,
+          title: a.name || a.id,
+          body: buildAreaBody(a)
+        }));
+      }
+
+      function useGeneratedModule(module) {
+        state.module = module;
+        state.areas = parseGeneratedAreas(module);
+        state.graphicsByNum = [];
+        state.isGenerated = true;
+        state.loading = false;
+        clearLoading();
+        const intro = module.legend.backstory + (module.legend.dm_notes ? '\n\n' + module.legend.dm_notes : '');
+        const mapAscii = mapToAscii(module);
+        state.messageHistory = [{ role: 'dm', content: intro + (mapAscii ? '\n\nMap:\n' + mapAscii : '') }];
+        messagesEl.innerHTML = '';
+        appendMessage('dm',
+          '<p>' + escapeHtml(intro) + '</p>' +
+          (mapAscii ? '<pre class="map-pre" aria-label="Dungeon map">' + escapeHtml(mapAscii) + '\n# = wall  . = floor  E = entrance  G = goal</pre>' : ''),
+          null
+        );
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
       }
 
       function parseAreas() {
@@ -217,6 +312,9 @@
       }
 
       function dmIntro() {
+        if (state.isGenerated && state.module.legend) {
+          return state.module.legend.backstory + (state.module.legend.dm_notes ? '\n\n' + state.module.legend.dm_notes : '');
+        }
         const p4 = state.module.pages.find(p => p.page === 4);
         const raw = p4 ? p4.text : '';
         const keyStart = raw.indexOf('KEY TO THE TOMB');
@@ -267,7 +365,8 @@
         const match = t.match(/\b(?:area\s*)?(\d{1,2})\b/i) || t.match(/\b(?:go to|enter|we (?:go|enter|are at)|describe)\s*(\d{1,2})\b/i);
         if (match) {
           const num = parseInt(match[1], 10);
-          if (num >= 1 && num <= 33) return num;
+          const maxArea = state.isGenerated && state.areas.length ? state.areas.length : 33;
+          if (num >= 1 && num <= maxArea) return num;
         }
         return null;
       }
@@ -291,8 +390,9 @@
           const reply = dmReplyForArea(areaNum);
           if (reply) return reply;
         }
+        const maxA = state.areas.length || 33;
         return {
-          text: 'Describe where you go or what you do—for example, "We go to area 3" or "We search the entrance."',
+          text: 'Describe where you go or what you do—for example, "We go to area 1" or "Describe area ' + maxA + '."',
           graphicNum: null
         };
       }
@@ -379,6 +479,7 @@
       }
 
       function loadModule() {
+        state.isGenerated = false;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000);
         fetch('tomb_of_horrors.json', { signal: controller.signal })
@@ -394,6 +495,7 @@
             buildGraphicsIndex();
             state.loading = false;
             clearLoading();
+            messagesEl.innerHTML = '';
             const intro = dmIntro();
             state.messageHistory = [{ role: 'dm', content: intro }];
             appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
@@ -411,8 +513,29 @@
           });
       }
 
-      try {
+      function startWithRandomDungeon() {
+        if (typeof window.generateDungeon !== 'function') {
+          showError('Dungeon generator script not loaded. Ensure dungeon-generator.js is in the same folder as dm.html.');
+          return;
+        }
+        clearLoading();
+        useGeneratedModule(window.generateDungeon());
+      }
+
+      document.getElementById('btn-generate').addEventListener('click', () => {
+        if (typeof window.generateDungeon !== 'function') return;
+        useGeneratedModule(window.generateDungeon());
+      });
+
+      document.getElementById('btn-load-classic').addEventListener('click', () => {
+        if (state.loading) return;
+        state.loading = true;
+        messagesEl.innerHTML = '<p class="loading-msg" id="loading-state">Loading Tomb of Horrors…</p>';
         loadModule();
+      });
+
+      try {
+        startWithRandomDungeon();
       } catch (e) {
         showError('Could not start: ' + (e?.message || String(e)));
       }
