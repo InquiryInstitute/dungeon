@@ -279,12 +279,19 @@
 
     const allTraps = areas.flatMap(a => a.traps);
 
+    const introVariants = [
+      'The hill rises before you—low, flat-topped, its sides thick with weeds, thorns, and briars. Tales say the crypt lies beneath: traps, guardians, and treasures. You have found the place. The entrance is hidden; only a careful search will reveal it. What do you do?',
+      'Before you, a low hill, bare and overgrown. The legends are clear: beneath it lies the crypt—traps and treasures both. You stand at the site. The way in is hidden. What do you do?',
+      'A flat-topped mound rises from the ground, thorn and briar crowding its sides. This is the place from the tales: the crypt below, its traps and its hoard. The entrance is not obvious. What do you do?'
+    ];
+    const backstory = pick(introVariants, rng);
+
     return {
       version: 'tomb-module-1.0',
       title: 'Generated Tomb of Horrors',
       legend: {
         title: 'Generated Tomb of Horrors',
-        backstory: 'The hill rises before you—low, flat-topped, its sides thick with weeds, thorns, and briars. Tales say the crypt lies beneath: traps, guardians, and treasures. You have found the place. The entrance is hidden; only a careful search will reveal it. What do you do?',
+        backstory: backstory,
         locale_options: [
           'The highest hill on the plains',
           'An unmapped island in the great lake',

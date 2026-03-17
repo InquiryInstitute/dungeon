@@ -259,6 +259,7 @@
         state.messageHistory = [{ role: 'dm', content: intro }];
         messagesEl.innerHTML = '';
         appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
+        messagesEl.scrollTop = 0;
         input.disabled = false;
         sendBtn.disabled = false;
         input.focus();
@@ -316,24 +317,19 @@
         let block = keyStart > 0 ? raw.slice(0, keyStart) : raw;
         const startMarker = 'Start:';
         const startIdx = block.indexOf(startMarker);
-        let legend = block;
         let start = '';
         if (startIdx >= 0) {
-          legend = block.slice(0, startIdx).replace(/NOTES FOR THE DUNGEON MASTER[\s\S]*$/i, '').trim();
           start = block.slice(startIdx + startMarker.length).trim();
-        }
-        legend = legend.replace(/^LEGEND OF THE TOMB\s*/i, '').trim();
-        if (start) {
+          start = start.replace(/\bNote:[\s\S]*$/i, '').trim();
+          start = start.replace(/\bAs soon as[\s\S]*$/i, '').trim();
           start = start.replace(/\bPam\//g, 'Party').replace(/\s+/g, ' ');
+          start = start.replace(/\bThe party\b/gi, 'You').replace(/\bbefore them\b/gi, 'before you').replace(/\btheir\b/gi, 'your').replace(/\bthey\b/gi, 'you').replace(/\bthem\b/g, 'you');
         }
-        const startTrim = start ? start.slice(0, 2400) + (start.length > 2400 ? '…' : '') : '';
-        const intro = [
-          'I run the Tomb of Horrors—the labyrinthine crypt of the demi-lich Acererak. ' +
-          'Somewhere under a lost and lonely hill lies this place: terrible traps, few monsters, and riches both precious and magical. ' +
-          'Those who seek the chamber where Acererak lingers will find the passages fraught with poison, magic, and death. Only the bravest and strongest parties should attempt it, and they must be prepared to fail.',
-          startTrim ? 'You have arrived at the site. ' + startTrim : ''
-        ].filter(Boolean).join('\n\n');
-        return intro;
+        if (!start) {
+          start = 'You have arrived at the site of the demi-lich\'s last haunt. Before you is a low, flat-topped hill, its sides overgrown with weeds, thorns, and briars. The entrance is hidden. What do you do?';
+        }
+        const startTrim = start.slice(0, 2400) + (start.length > 2400 ? '…' : '');
+        return startTrim;
       }
 
       function appendMessage(role, bodyHtml, graphicNum) {
