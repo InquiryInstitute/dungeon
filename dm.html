@@ -119,8 +119,9 @@
     .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
     .loading-msg {
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-style: italic;
+      padding: 1rem 0;
     }
     .error-msg {
       color: #b85c5c;
@@ -130,11 +131,13 @@
 </head>
 <body>
   <div class="chat">
-    <div class="messages" id="messages"></div>
+    <div class="messages" id="messages">
+      <p class="loading-msg" id="loading-state">Loading module…</p>
+    </div>
     <div class="input-row">
       <form id="form" autocomplete="off">
-        <input type="text" id="input" placeholder="Say what you do…" aria-label="Your message" />
-        <button type="submit" id="send">Send</button>
+        <input type="text" id="input" placeholder="Say what you do…" aria-label="Your message" disabled />
+        <button type="submit" id="send" disabled>Send</button>
       </form>
     </div>
   </div>
@@ -227,11 +230,12 @@
           start = block.slice(startIdx + startMarker.length).trim();
         }
         legend = legend.replace(/^LEGEND OF THE TOMB\s*/i, '').trim();
+        const startTrim = start ? start.replace(/\s+/g, ' ').slice(0, 520) + '…' : '';
         const intro = [
           'I run the Tomb of Horrors—the labyrinthine crypt of the demi-lich Acererak. ' +
           'Somewhere under a lost and lonely hill lies this place: terrible traps, few monsters, and riches both precious and magical. ' +
           'Those who seek the chamber where Acererak lingers will find the passages fraught with poison, magic, and death. Only the bravest and strongest parties should attempt it, and they must be prepared to fail.',
-          start ? 'You have arrived at the site. ' + start.replace(/\s+/g, ' ').slice(0, 520) + '…' : ''
+          startTrim ? 'You have arrived at the site. ' + startTrim : ''
         ].filter(Boolean).join('\n\n');
         return intro;
       }
@@ -360,21 +364,58 @@
         submitUserMessage();
       });
 
-      fetch('tomb_of_horrors.json')
-        .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
-        .then(data => {
-          state.module = data;
-          state.areas = parseAreas();
-          buildGraphicsIndex();
-          state.loading = false;
-          const intro = dmIntro();
-          state.messageHistory = [{ role: 'dm', content: intro }];
-          appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
-        })
-        .catch(() => {
-          state.loading = false;
-          messagesEl.innerHTML = '<p class="error-msg">Failed to load the module. Check your connection and refresh.</p>';
-        });
+      function clearLoading() {
+        const el = $('#loading-state');
+        if (el) el.remove();
+      }
+
+      function showError(msg) {
+        state.loading = false;
+        clearLoading();
+        messagesEl.innerHTML = '<p class="error-msg">' + escapeHtml(msg) + '</p>';
+      }
+
+      function loadModule() {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        fetch('tomb_of_horrors.json', { signal: controller.signal })
+          .then(r => {
+            clearTimeout(timeout);
+            if (!r.ok) throw new Error(r.status === 404 ? 'Module data not found (404).' : r.statusText);
+            return r.json();
+          })
+          .then(data => {
+            if (!data || !data.pages) throw new Error('Invalid module data.');
+            state.module = data;
+            state.areas = parseAreas();
+            buildGraphicsIndex();
+            state.loading = false;
+            clearLoading();
+            const intro = dmIntro();
+            state.messageHistory = [{ role: 'dm', content: intro }];
+            appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+          })
+          .catch((err) => {
+            clearTimeout(timeout);
+            if (err.name === 'AbortError') {
+              showError('Module is taking too long to load (timeout). Try again or check your connection.');
+            } else {
+              showError('Failed to load the module: ' + (err.message || 'Unknown error') + '. Refresh to try again.');
+            }
+          });
+      }
+
+      try {
+        loadModule();
+      } catch (e) {
+        showError('Could not start: ' + (e?.message || String(e)));
+      }
+
+      input.disabled = true;
+      sendBtn.disabled = true;
     })();
   </script>
 </body>
