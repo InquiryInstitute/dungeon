@@ -320,9 +320,18 @@
         let start = '';
         if (startIdx >= 0) {
           start = block.slice(startIdx + startMarker.length).trim();
+          // Keep only in-world description: drop DM notes, mechanics, and map meta.
+          start = start.replace(/\s*\(This is the area[\s\S]*?dungeon map\.\)\s*/i, ' ');
+          start = start.replace(/\n\nIt will require[\s\S]*$/i, '').trim();
           start = start.replace(/\bNote:[\s\S]*$/i, '').trim();
           start = start.replace(/\bAs soon as[\s\S]*$/i, '').trim();
+          start = start.replace(/\bLeave this strictly[\s\S]*$/i, '').trim();
+          start = start.replace(/\bThe best manner to handle it[\s\S]*$/i, '').trim();
+          start = start.replace(/\bRemember low probing[\s\S]*$/i, '').trim();
+          start = start.replace(/\bNote that probing[\s\S]*$/i, '').trim();
           start = start.replace(/\bPam\//g, 'Party').replace(/\s+/g, ' ');
+          // Fix common OCR glitches in the kept intro
+          start = start.replace(/\bthetop\b/gi, 'the top').replace(/\borso\b/g, 'or so').replace(/\bmoun\b/g, 'mound').replace(/\beost\b/g, 'east').replace(/\bsond\b/g, 'sand').replace(/\bentronce\b/g, 'entrance').replace(/\bond\b/g, 'and').trim();
           start = start.replace(/\bThe party\b/gi, 'You').replace(/\bbefore them\b/gi, 'before you').replace(/\btheir\b/gi, 'your').replace(/\bthey\b/gi, 'you').replace(/\bthem\b/g, 'you');
         }
         if (!start) {
