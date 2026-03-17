@@ -201,20 +201,71 @@
   <div class="page">
     <div class="wrap">
       <header>
-        <p class="site-label">Inquiry Institute</p>
+        <p class="site-label">Castalia Institute</p>
         <h1>Dungeon</h1>
         <p class="tagline">A benchmark and implementation for evaluating AI world models using structured adversarial environments—inspired by D&D and latent inference.</p>
       </header>
 
-      <section class="block" aria-labelledby="research-heading">
-        <h2 class="block-title" id="research-heading">Research</h2>
+      <section class="block" aria-labelledby="course-heading">
+        <h2 class="block-title" id="course-heading">Micro-credential</h2>
         <div class="card">
-          <h2>Dungeon World Model Benchmark (DWMB)</h2>
+          <h2>Learn World Models through D&D</h2>
           <p>
-            <span class="highlight">DWMB</span> is a suite of compact, procedurally generated grid-world POMDPs designed to require agents to <em>infer</em> latent hazards, topology, and non-local causal triggers. Traps look like safe floor; switches far away arm or disarm them. The benchmark isolates whether agents build and use a coherent belief over hidden structure—rather than succeeding by trial-and-error or luck.
+            We offer a <span class="highlight">micro-credential course</span> through Castalia where we use <em>Dungeons &amp; Dragons</em> to teach world models: latent state, partial observability, belief updating, and planning under uncertainty. Dungeons are the perfect sandbox—hidden traps, distant switches, and choices that reveal how well you (or an agent) hold a model of the world in mind.
           </p>
           <p>
-            We propose <strong>Preemptive Inference Rate (PIR)</strong>: the fraction of hazards whose danger was predicted above threshold <em>before</em> first activation. That separates safe latent inference from “unsafe success.” The document is a <strong>benchmark definition and preregistered evaluation protocol</strong>: formal POMDP spec, JSON schema, difficulty tiers T1–T5, uniform belief-extraction convention, baselines (model-free RL, MuZero-style, Dreamer/RSSM, LLM+memory, JEPA-style), and statistical analysis plan. The hypothesis that belief-based agents achieve higher PIR is falsifiable and pending validation.
+            The course ties directly to the Dungeon World Model Benchmark (DWMB). By the end, you understand the research, the metrics (like Preemptive Inference Rate), and how to run and extend the code—so you can evaluate AI agents that think ahead instead of just reacting.
+          </p>
+          <div class="cta-row">
+            <a href="https://castalia.institute" class="btn btn-primary">Castalia Institute — courses</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="research-heading">
+        <h2 class="block-title" id="research-heading">Research</h2>
+
+        <div class="card">
+          <h2>Why DWMB</h2>
+          <p>
+            World-model learning and planning are widely seen as prerequisites for robust intelligence. Yet most RL benchmarks (Atari, Procgen, MuJoCo) let reactive policies succeed without truly understanding hidden structure—either because hidden state is rare or because success can be achieved by luck or memoryless play. The <span class="highlight">Dungeon World Model Benchmark (DWMB)</span> aims to <em>isolate latent inference</em>: each instance is a grid-world POMDP where traps look identical to safe floor, switches far away arm or disarm hazards, and the agent gets only a local egocentric view. Reaching the goal is possible by taking risks; achieving <em>safe</em> success requires building and updating a belief over what is hidden.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Formal setup</h2>
+          <p>
+            DWMB is a distribution over episodic POMDPs. <strong>State</strong> is (agent pose, static topology, latent state): topology includes walls, doors, secret edges; latent state includes which traps are armed and which switches are toggled. <strong>Observations</strong> are a radius-<em>r</em> egocentric view plus events (e.g. “you hear a click,” damage). Crucially, hidden hazards are <em>visually identical to floor</em> in the view. <strong>Actions</strong>: Move, Inspect (low success probability to reveal a trap or secret), Interact (toggle switch, open door), UseItem. Reward is sparse (goal + small step cost); we also support a constraint regime where goal success and safety (no trap triggered, no death) are reported separately to avoid reward hacking.
+          </p>
+          <p>
+            The generator enforces <strong>adversarial constraints</strong>: (a) at least one trap has no unique visual hint; (b) there exists an alternate safe path; (c) in higher tiers, at least one switch far away affects a hazard with no local cue; (d) in T5, distractors (dead-ends, longer horizon) waste time. So agents cannot shortcut: they must infer latent structure and plan.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Difficulty tiers (T1–T5)</h2>
+          <p>
+            <strong>T1</strong> — Single hazard, no switch. <strong>T2</strong> — 1–2 hazards, optional local switch. <strong>T3</strong> — Multiple hazards, at least one switch; short path may be trapped. <strong>T4</strong> — Non-local causality: at least one switch controls a distant trap with no local cue. <strong>T5</strong> — T4 plus distractors (dead-end corridors, longer horizon). Map size and visibility radius scale with tier. Exact generator parameters are fixed in the released code for reproducibility.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Preemptive Inference Rate (PIR) and metrics</h2>
+          <p>
+            We propose <strong>PIR</strong>: for each hidden hazard, did the agent’s predicted probability of danger exceed a threshold <em>before</em> its first step on that tile? PIR is the fraction of hazards for which the answer is yes. That separates “safe” latent inference from “unsafe success” (reaching the goal by tolerating trap damage or luck). A <strong>uniform belief-extraction convention</strong> is required so PIR is comparable across methods: every agent must expose per-hazard probabilities at each step (from belief state, an auxiliary head, or prompted LLM output); evaluation scripts use only these logged values.
+          </p>
+          <p>
+            We also report <strong>AUPIR</strong> (area under PIR vs. threshold), <strong>calibration</strong> as a secondary diagnostic, <strong>goal completion</strong> and <strong>survival</strong> rates, <strong>hazard activation counts</strong>, and optionally <strong>topology/causal discovery F1</strong> and sample-efficiency AUCs. Success and safety are decoupled: an agent can have high goal rate but low PIR (risk-taking) or high PIR and high safety (belief-driven planning).
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Baselines and hypothesis</h2>
+          <p>
+            Baselines include: (a) <strong>Model-free RL</strong> (e.g. PPO+LSTM)—expected to achieve some goal success but low PIR (risk-taking). (b) <strong>MuZero-like</strong> planners—may ignore trap semantics or mis-assign credit over long chains. (c) <strong>Dreamer/RSSM</strong> recurrent world models—may struggle with discrete triggers or belief collapse. (d) <strong>LLM + memory</strong>—strong priors but risk of hallucinated maps and poor calibration. (e) <strong>JEPA-style</strong> encoder + predictor + planner—proposed architecture; must map latent state to per-hazard probabilities for PIR.
+          </p>
+          <p>
+            <strong>Hypothesis (pending validation):</strong> At matched goal-success rates, agents that explicitly represent and update beliefs over latent structure will achieve higher PIR and better robustness on <strong>counterfactual</strong> tests (e.g. randomly permuting which tile is the trap or which switch controls which trap) than purely reactive agents. DWMB is a benchmark definition and preregistered evaluation protocol; we specify statistical tests (paired Wilcoxon, mixed-effects models, FDR correction). No empirical results are reported yet—the claim is falsifiable once experiments are run.
           </p>
           <div class="cta-row">
             <a href="report.html" class="btn btn-primary">Read the full report</a>

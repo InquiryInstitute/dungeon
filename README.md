@@ -62,6 +62,14 @@ python scripts/train.py --instances instances/train --steps 5000 --out runs/ppo 
 python scripts/evaluate.py instances/unit_test/worked_example_16x16.json --agent ppo_lstm --checkpoint runs/ppo/ckpt_final.pt
 ```
 
+**JEPA-style agent** (Phase 4):
+
+```bash
+python scripts/train_jepa.py --instances instances/train --steps 3000 --out runs/jepa
+python scripts/evaluate.py instances/unit_test/worked_example_16x16.json --agent jepa --checkpoint runs/jepa/ckpt_final.pt
+# Ablations: --no-predictor or --no-belief-loss in train_jepa
+```
+
 ## Apply Supabase migrations
 
 If using Supabase, create the tables:
