@@ -684,6 +684,24 @@
         loadModule();
       });
 
+      const statsPanel = document.getElementById('stats-panel');
+      const statsBackdrop = document.getElementById('stats-backdrop');
+      function openStatsPanel() {
+        statsPanel.classList.add('open');
+        statsBackdrop.classList.add('open');
+        statsPanel.setAttribute('aria-hidden', 'false');
+        statsBackdrop.setAttribute('aria-hidden', 'false');
+      }
+      function closeStatsPanel() {
+        statsPanel.classList.remove('open');
+        statsBackdrop.classList.remove('open');
+        statsPanel.setAttribute('aria-hidden', 'true');
+        statsBackdrop.setAttribute('aria-hidden', 'true');
+      }
+      document.getElementById('btn-stats').addEventListener('click', openStatsPanel);
+      document.getElementById('stats-close').addEventListener('click', closeStatsPanel);
+      statsBackdrop.addEventListener('click', closeStatsPanel);
+
       try {
         startWithRandomDungeon();
       } catch (e) {

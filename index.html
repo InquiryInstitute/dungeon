@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Dungeon World Model Benchmark (DWMB): structured adversarial grid-world POMDPs for evaluating latent inference and world models. Preemptive Inference Rate (PIR), tiers T1–T5, baselines and implementation." />
   <title>Dungeon — World Model Benchmark</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,6 +23,24 @@
     }
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 0.75rem;
+      z-index: 100;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0.75rem;
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
     body {
       font-family: var(--font-body);
       font-size: 1rem;
@@ -109,7 +128,8 @@
       margin-bottom: 1.25rem;
     }
     .card:last-child { margin-bottom: 0; }
-    .card h2 {
+    .card h2,
+    .card h3 {
       font-family: var(--font-head);
       font-size: 1.25rem;
       font-weight: 600;
@@ -129,6 +149,17 @@
       font-weight: 500;
     }
     .card a:hover { text-decoration: underline; }
+    .card a.btn {
+      text-decoration: none;
+    }
+    .card a.btn:hover { text-decoration: none; }
+    .card a.btn-primary {
+      color: var(--bg);
+    }
+    .card a.btn-primary:hover { color: var(--bg); }
+    .card a.btn-secondary {
+      color: var(--accent);
+    }
 
     /* CTA row */
     .cta-row {
@@ -158,6 +189,12 @@
       color: var(--accent);
     }
     .btn-secondary:hover { background: rgba(201, 162, 39, 0.25); }
+    .btn:focus-visible,
+    .card a:focus-visible,
+    footer a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
 
     /* Implementation list */
     .impl-list {
@@ -198,7 +235,8 @@
   </style>
 </head>
 <body>
-  <div class="page">
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="page" id="main">
     <div class="wrap">
       <header>
         <p class="site-label">Castalia Institute</p>
@@ -206,34 +244,18 @@
         <p class="tagline">A benchmark and implementation for evaluating AI world models using structured adversarial environments—inspired by D&D and latent inference.</p>
       </header>
 
-      <section class="block" aria-labelledby="course-heading">
-        <h2 class="block-title" id="course-heading">Micro-credential</h2>
-        <div class="card">
-          <h2>Learn World Models through D&D</h2>
-          <p>
-            We offer a <span class="highlight">micro-credential course</span> through Castalia where we use <em>Dungeons &amp; Dragons</em> to teach world models: latent state, partial observability, belief updating, and planning under uncertainty. Dungeons are the perfect sandbox—hidden traps, distant switches, and choices that reveal how well you (or an agent) hold a model of the world in mind.
-          </p>
-          <p>
-            The course ties directly to the Dungeon World Model Benchmark (DWMB). By the end, you understand the research, the metrics (like Preemptive Inference Rate), and how to run and extend the code—so you can evaluate AI agents that think ahead instead of just reacting.
-          </p>
-          <div class="cta-row">
-            <a href="https://castalia.institute" class="btn btn-primary">Castalia Institute — courses</a>
-          </div>
-        </div>
-      </section>
-
       <section class="block" aria-labelledby="research-heading">
         <h2 class="block-title" id="research-heading">Research</h2>
 
         <div class="card">
-          <h2>Why DWMB</h2>
+          <h3>Why DWMB</h3>
           <p>
             World-model learning and planning are widely seen as prerequisites for robust intelligence. Yet most RL benchmarks (Atari, Procgen, MuJoCo) let reactive policies succeed without truly understanding hidden structure—either because hidden state is rare or because success can be achieved by luck or memoryless play. The <span class="highlight">Dungeon World Model Benchmark (DWMB)</span> aims to <em>isolate latent inference</em>: each instance is a grid-world POMDP where traps look identical to safe floor, switches far away arm or disarm hazards, and the agent gets only a local egocentric view. Reaching the goal is possible by taking risks; achieving <em>safe</em> success requires building and updating a belief over what is hidden.
           </p>
         </div>
 
         <div class="card">
-          <h2>Formal setup</h2>
+          <h3>Formal setup</h3>
           <p>
             DWMB is a distribution over episodic POMDPs. <strong>State</strong> is (agent pose, static topology, latent state): topology includes walls, doors, secret edges; latent state includes which traps are armed and which switches are toggled. <strong>Observations</strong> are a radius-<em>r</em> egocentric view plus events (e.g. “you hear a click,” damage). Crucially, hidden hazards are <em>visually identical to floor</em> in the view. <strong>Actions</strong>: Move, Inspect (low success probability to reveal a trap or secret), Interact (toggle switch, open door), UseItem. Reward is sparse (goal + small step cost); we also support a constraint regime where goal success and safety (no trap triggered, no death) are reported separately to avoid reward hacking.
           </p>
@@ -243,14 +265,14 @@
         </div>
 
         <div class="card">
-          <h2>Difficulty tiers (T1–T5)</h2>
+          <h3>Difficulty tiers (T1–T5)</h3>
           <p>
             <strong>T1</strong> — Single hazard, no switch. <strong>T2</strong> — 1–2 hazards, optional local switch. <strong>T3</strong> — Multiple hazards, at least one switch; short path may be trapped. <strong>T4</strong> — Non-local causality: at least one switch controls a distant trap with no local cue. <strong>T5</strong> — T4 plus distractors (dead-end corridors, longer horizon). Map size and visibility radius scale with tier. Exact generator parameters are fixed in the released code for reproducibility.
           </p>
         </div>
 
         <div class="card">
-          <h2>Preemptive Inference Rate (PIR) and metrics</h2>
+          <h3>Preemptive Inference Rate (PIR) and metrics</h3>
           <p>
             We propose <strong>PIR</strong>: for each hidden hazard, did the agent’s predicted probability of danger exceed a threshold <em>before</em> its first step on that tile? PIR is the fraction of hazards for which the answer is yes. That separates “safe” latent inference from “unsafe success” (reaching the goal by tolerating trap damage or luck). A <strong>uniform belief-extraction convention</strong> is required so PIR is comparable across methods: every agent must expose per-hazard probabilities at each step (from belief state, an auxiliary head, or prompted LLM output); evaluation scripts use only these logged values.
           </p>
@@ -260,7 +282,7 @@
         </div>
 
         <div class="card">
-          <h2>Baselines and hypothesis</h2>
+          <h3>Baselines and hypothesis</h3>
           <p>
             Baselines include: (a) <strong>Model-free RL</strong> (e.g. PPO+LSTM)—expected to achieve some goal success but low PIR (risk-taking). (b) <strong>MuZero-like</strong> planners—may ignore trap semantics or mis-assign credit over long chains. (c) <strong>Dreamer/RSSM</strong> recurrent world models—may struggle with discrete triggers or belief collapse. (d) <strong>LLM + memory</strong>—strong priors but risk of hallucinated maps and poor calibration. (e) <strong>JEPA-style</strong> encoder + predictor + planner—proposed architecture; must map latent state to per-hazard probabilities for PIR.
           </p>
@@ -274,10 +296,26 @@
         </div>
       </section>
 
+      <section class="block" aria-labelledby="course-heading">
+        <h2 class="block-title" id="course-heading">Micro-credential</h2>
+        <div class="card">
+          <h3>Learn World Models through D&D</h3>
+          <p>
+            We offer a <span class="highlight">micro-credential course</span> through Castalia where we use <em>Dungeons &amp; Dragons</em> to teach world models: latent state, partial observability, belief updating, and planning under uncertainty. Dungeons are the perfect sandbox—hidden traps, distant switches, and choices that reveal how well you (or an agent) hold a model of the world in mind.
+          </p>
+          <p>
+            The course ties directly to the Dungeon World Model Benchmark (DWMB). By the end, you understand the research, the metrics (like Preemptive Inference Rate), and how to run and extend the code—so you can evaluate AI agents that think ahead instead of just reacting.
+          </p>
+          <div class="cta-row">
+            <a href="https://castalia.institute" class="btn btn-primary">Castalia Institute — courses</a>
+          </div>
+        </div>
+      </section>
+
       <section class="block" aria-labelledby="impl-heading">
         <h2 class="block-title" id="impl-heading">Implementation</h2>
         <div class="card">
-          <h2>Code &amp; infrastructure</h2>
+          <h3>Code &amp; infrastructure</h3>
           <p>
             The repo provides the DWMB schema, canonical unit-test dungeons, evaluation scripts, baseline agents, and optional Supabase storage for runs and metrics.
           </p>
@@ -290,7 +328,7 @@
             <li><code>supabase/</code> <span class="desc">— Migrations and edge functions for instances, runs, metrics</span></li>
           </ul>
           <p style="margin-top: 1rem;">
-            Agents: <code>random</code>, <code>heuristic</code>, <code>ppo_lstm</code>; each exposes per-hazard beliefs for PIR. See <a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a> for quick start and layout.
+            Agents: <code>random</code>, <code>heuristic</code>, <code>ppo_lstm</code> — each exposes per-hazard beliefs for PIR. See <a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a> for quick start and layout.
           </p>
           <div class="cta-row">
             <a href="dm.html" class="btn btn-primary">Dungeon Master (Tomb of Horrors S1)</a>
