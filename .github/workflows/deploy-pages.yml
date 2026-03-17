@@ -19,16 +19,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Prepare site
+      - name: Prepare site (root = site root)
         run: |
-          mkdir -p _site
-          cp index.html CNAME .nojekyll _site/
+          rm -rf .git .github README.md
+          ls -la
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: _site
+          path: .
 
   deploy:
     environment:
