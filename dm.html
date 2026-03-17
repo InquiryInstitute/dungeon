@@ -255,15 +255,10 @@
         state.isGenerated = true;
         state.loading = false;
         clearLoading();
-        const intro = module.legend.backstory + (module.legend.dm_notes ? '\n\n' + module.legend.dm_notes : '');
-        const mapAscii = mapToAscii(module);
-        state.messageHistory = [{ role: 'dm', content: intro + (mapAscii ? '\n\nMap:\n' + mapAscii : '') }];
+        const intro = module.legend.backstory;
+        state.messageHistory = [{ role: 'dm', content: intro }];
         messagesEl.innerHTML = '';
-        appendMessage('dm',
-          '<p>' + escapeHtml(intro) + '</p>' +
-          (mapAscii ? '<pre class="map-pre" aria-label="Dungeon map">' + escapeHtml(mapAscii) + '\n# = wall  . = floor  E = entrance  G = goal</pre>' : ''),
-          null
-        );
+        appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
         input.disabled = false;
         sendBtn.disabled = false;
         input.focus();
@@ -313,7 +308,7 @@
 
       function dmIntro() {
         if (state.isGenerated && state.module.legend) {
-          return state.module.legend.backstory + (state.module.legend.dm_notes ? '\n\n' + state.module.legend.dm_notes : '');
+          return state.module.legend.backstory;
         }
         const p4 = state.module.pages.find(p => p.page === 4);
         const raw = p4 ? p4.text : '';

@@ -284,7 +284,7 @@
       title: 'Generated Tomb of Horrors',
       legend: {
         title: 'Generated Tomb of Horrors',
-        backstory: 'Somewhere under a lost and lonely hill lies a labyrinthine crypt. It is filled with terrible traps, strange guardians, and rich treasures—but the true nature of the place is known only to the one who built it.',
+        backstory: 'The hill rises before you—low, flat-topped, its sides thick with weeds, thorns, and briars. Tales say the crypt lies beneath: traps, guardians, and treasures. You have found the place. The entrance is hidden; only a careful search will reveal it. What do you do?',
         locale_options: [
           'The highest hill on the plains',
           'An unmapped island in the great lake',
