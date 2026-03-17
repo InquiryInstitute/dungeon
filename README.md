@@ -6,12 +6,24 @@ This project investigates how tabletop role-playing games (e.g., Dungeons & Drag
 
 ### Running the Tomb of Horrors (S1) DM
 
-The repo includes extracted text and maps from *Tomb of Horrors* in `tomb_of_horrors.json`. To use the Dungeon Master app:
+The DM is a **chat-only** page: the DM (Gemini via Vertex AI) speaks first with an intro, then you describe actions and get replies.
 
-1. Serve the directory over HTTP (e.g. `python3 -m http.server 9999`).
-2. Open `dm.html` in a browser (e.g. http://localhost:9999/dm.html).
+**Option A — With Gemini (Supabase Edge Function + Vertex AI)**
 
-The DM lets you jump to any keyed area (1–33), read the full key, show player handouts and maps, and search the module text.
+1. Create a Supabase project and deploy the Edge Function:
+   ```bash
+   cd supabase && supabase functions deploy dm-invoke
+   ```
+2. Set Edge Function secrets in Supabase Dashboard: `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_SERVICE_ACCOUNT_JSON` (see `supabase/functions/README.md`).
+3. In `dm.html`, set your project URL and anon key:
+   ```js
+   window.DM_CONFIG = { supabaseUrl: 'https://YOUR_REF.supabase.co', supabaseAnonKey: 'YOUR_ANON_KEY' };
+   ```
+4. Serve the site over HTTP and open `dm.html`. The chat will call the Edge Function, which uses Vertex AI (Gemini) to run the DM.
+
+**Option B — Without backend**
+
+If `DM_CONFIG` is not set, the DM falls back to simple area lookups: mention a number 1–33 (e.g. “we go to area 3”) to get that area’s text from the module.
 
 ---
 

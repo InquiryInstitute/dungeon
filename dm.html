@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dungeon Master — Tomb of Horrors</title>
+  <title>Tomb of Horrors</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #0d0c0f;
@@ -15,282 +15,157 @@
       --text: #e8e4dc;
       --muted: #7d7680;
       --accent: #b8860b;
-      --accent-dim: #6b5a2e;
-      --danger: #8b3a3a;
-      --sidebar-width: 280px;
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
     body {
       font-family: 'Crimson Pro', Georgia, serif;
       background: var(--bg);
       color: var(--text);
-      margin: 0;
-      min-height: 100vh;
       font-size: 17px;
       line-height: 1.6;
-    }
-    .layout {
-      display: flex;
-      min-height: 100vh;
-    }
-    /* Sidebar */
-    .sidebar {
-      width: var(--sidebar-width);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      flex-shrink: 0;
     }
-    .sidebar-header {
-      padding: 1.25rem 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-header h1 {
-      font-family: 'Cinzel', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin: 0;
-      letter-spacing: 0.05em;
-    }
-    .sidebar-header p {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin: 0.35rem 0 0 0;
-    }
-    .nav-section {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-section-title {
-      font-family: 'Cinzel', serif;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 0.35rem 1rem;
-      margin: 0;
-    }
-    .nav-item {
-      display: block;
+    .chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-width: 48rem;
+      margin: 0 auto;
       width: 100%;
-      padding: 0.5rem 1rem;
-      background: none;
-      border: none;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.9rem;
-      text-align: left;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      padding: 0 1rem;
     }
-    .nav-item:hover {
-      background: rgba(184, 134, 11, 0.12);
-      color: var(--accent);
-    }
-    .nav-item.active {
-      background: var(--accent-dim);
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .nav-item .area-num {
-      display: inline-block;
-      width: 1.75rem;
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .nav-item.active .area-num { color: var(--accent); }
-    .nav-scroll {
+    .messages {
       flex: 1;
       overflow-y: auto;
+      padding: 1.5rem 0 1rem;
     }
-    /* Main */
-    .main {
-      flex: 1;
+    .msg {
+      margin-bottom: 1.25rem;
       display: flex;
-      flex-direction: column;
-      min-width: 0;
-      overflow: hidden;
-    }
-    .toolbar {
-      padding: 0.6rem 1.25rem;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
       gap: 0.75rem;
     }
-    .toolbar h2 {
-      font-family: 'Cinzel', serif;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0;
-      color: var(--accent);
-    }
-    .content-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.5rem 2rem 3rem;
-    }
-    .content-block {
-      max-width: 52rem;
-    }
-    .content-block h2 {
-      font-family: 'Cinzel', serif;
-      font-size: 1.35rem;
-      color: var(--accent);
-      margin: 0 0 0.75rem 0;
-    }
-    .content-block .prose {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .content-block .prose + .graphics-section { margin-top: 2rem; }
-    .graphics-section {
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-    }
-    .graphics-section h3 {
-      font-family: 'Cinzel', serif;
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin: 0 0 0.75rem 0;
-    }
-    .graphic-card {
-      display: inline-block;
-      margin: 0 0.75rem 0.75rem 0;
-      vertical-align: top;
-    }
-    .graphic-card img {
-      display: block;
-      max-width: 320px;
-      max-height: 400px;
-      width: auto;
-      height: auto;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--bg);
-    }
-    .graphic-card figcaption {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 0.35rem;
-    }
-    .maps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
-    }
-    .maps-grid img {
-      width: 100%;
-      height: auto;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      cursor: pointer;
-      background: var(--bg);
-    }
-    .maps-grid img:hover { border-color: var(--accent); }
-    .loading, .error {
-      padding: 3rem 2rem;
-      text-align: center;
-      color: var(--muted);
-    }
-    .error { color: var(--danger); }
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
+    .msg.dm { flex-direction: row; }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-role {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      padding: 2rem;
-      cursor: pointer;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
     }
-    .modal-overlay img {
-      max-width: 95vw;
-      max-height: 90vh;
-      object-fit: contain;
+    .msg.dm .msg-role { background: var(--accent); color: var(--bg); }
+    .msg.user .msg-role { background: var(--border); color: var(--muted); }
+    .msg-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .msg-body p { margin: 0 0 0.5rem 0; }
+    .msg-body p:last-child { margin-bottom: 0; }
+    .msg-body .graphic {
+      margin-top: 0.75rem;
+    }
+    .msg-body .graphic img {
+      max-width: 100%;
+      width: auto;
+      max-height: 280px;
       border-radius: 4px;
-      cursor: default;
-    }
-    .search-box {
-      padding: 0.4rem 0.6rem;
       border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--bg);
+    }
+    .msg.dm .msg-body { color: var(--text); }
+    .msg.user .msg-body { color: var(--muted); }
+    .input-row {
+      padding: 1rem 0 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .input-row form {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .input-row input {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
       color: var(--text);
       font-family: inherit;
-      font-size: 0.85rem;
-      width: 180px;
+      font-size: 1rem;
     }
-    .search-box::placeholder { color: var(--muted); }
-    .search-box:focus {
+    .input-row input::placeholder { color: var(--muted); }
+    .input-row input:focus {
       outline: none;
       border-color: var(--accent);
+    }
+    .input-row button {
+      padding: 0.65rem 1.25rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      font-family: 'Cinzel', serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .input-row button:hover { opacity: 0.9; }
+    .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading-msg {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+    .error-msg {
+      color: #b85c5c;
+      padding: 1rem 0;
     }
   </style>
 </head>
 <body>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h1>TOMB OF HORRORS</h1>
-        <p>S1 — Dungeon Master</p>
-      </div>
-      <div class="nav-scroll">
-        <nav class="nav-section" id="nav-sections">
-          <p class="nav-section-title">Module</p>
-          <button type="button" class="nav-item" data-id="legend">Legend &amp; Start</button>
-          <button type="button" class="nav-item" data-id="dm-notes">DM Notes</button>
-          <button type="button" class="nav-item" data-id="key">Key to the Tomb</button>
-          <button type="button" class="nav-item" data-id="roster">Character Roster</button>
-          <button type="button" class="nav-item" data-id="maps">Maps &amp; Art</button>
-        </nav>
-        <nav class="nav-section" id="nav-areas">
-          <p class="nav-section-title">Areas (1–33)</p>
-          <!-- filled by JS -->
-        </nav>
-      </div>
-    </aside>
-    <main class="main">
-      <div class="toolbar">
-        <h2 id="view-title">—</h2>
-        <input type="text" class="search-box" id="search" placeholder="Search text…" aria-label="Search" />
-      </div>
-      <div class="content-scroll" id="content">
-        <div class="loading" id="loading">Loading module…</div>
-      </div>
-    </main>
-  </div>
-  <div class="modal-overlay" id="modal" hidden>
-    <img id="modal-img" src="" alt="Enlarge" />
+  <div class="chat">
+    <div class="messages" id="messages"></div>
+    <div class="input-row">
+      <form id="form" autocomplete="off">
+        <input type="text" id="input" placeholder="Say what you do…" aria-label="Your message" />
+        <button type="submit" id="send">Send</button>
+      </form>
+    </div>
   </div>
 
   <script>
     (function () {
+      // Set these for your Supabase project (Edge Function dm-invoke + Vertex Gemini).
+      window.DM_CONFIG = window.DM_CONFIG || {
+        supabaseUrl: '',
+        supabaseAnonKey: ''
+      };
+
       const state = {
         module: null,
         areas: [],
         graphicsByNum: [],
-        activeId: 'legend',
-        searchQuery: ''
+        loading: true,
+        messageHistory: []  // { role: 'dm'|'user', content: string } for API
       };
 
       const $ = (sel, el = document) => el.querySelector(sel);
-      const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
+      const messagesEl = $('#messages');
+      const form = $('#form');
+      const input = $('#input');
+      const sendBtn = $('#send');
 
       function getKeyText() {
         if (!state.module) return '';
-        const pages = state.module.pages;
         let key = '';
         for (let i = 4; i <= 12; i++) {
-          const p = pages.find(pp => pp.page === i);
+          const p = state.module.pages.find(pp => pp.page === i);
           if (p && p.text) key += p.text + '\n';
         }
         return key;
@@ -313,30 +188,10 @@
           if (curr.num < 1 || curr.num > 33) continue;
           const next = matches[i + 1];
           const bodyEnd = next ? next.start : rest.length;
-          let body = rest.slice(curr.headerEnd, bodyEnd).trim();
+          const body = rest.slice(curr.headerEnd, bodyEnd).trim();
           areas.push({ num: curr.num, title: curr.title, body });
         }
         return areas;
-      }
-
-      function extractGraphicRefs(text) {
-        const refs = [];
-        const roman = { 'I': 1, 'II': 2, 'III': 3, 'I0': 10, 'IO': 10 };
-        const re = /(?:GRAPHIC|ILLUSTRATION)\s*#?\s*(\d+|[I]+|I0|IO)(?:\s*\(([A-Za-z])\))?/gi;
-        let m;
-        while ((m = re.exec(text)) !== null) {
-          let n = parseInt(m[1], 10);
-          if (isNaN(n)) {
-            const s = m[1].toUpperCase().replace(/\s/g, '');
-            n = roman[s] || (s === 'I' ? 1 : s === 'II' ? 2 : null);
-          }
-          if (n == null || isNaN(n)) continue;
-          const sub = m[2] || null;
-          if (!refs.some(r => r.num === n && r.sub === sub)) {
-            refs.push({ num: n, sub });
-          }
-        }
-        return refs;
       }
 
       function buildGraphicsIndex() {
@@ -345,116 +200,11 @@
         state.graphicsByNum = likely.length >= 33 ? likely : state.module.maps;
       }
 
-      function getGraphicImage(num, sub) {
+      function getGraphicForArea(num) {
         const arr = state.graphicsByNum;
-        let idx = num - 1;
-        if (sub) {
-          const letter = sub.toUpperCase().charCodeAt(0) - 65;
-          idx = (num - 1) * 5 + letter;
-        }
+        const idx = num - 1;
         if (idx < 0 || idx >= arr.length) return null;
         return arr[idx];
-      }
-
-      function renderContent() {
-        const root = $('#content');
-        const id = state.activeId;
-        root.innerHTML = '';
-
-        if (id === 'legend') {
-          const p4 = state.module.pages.find(p => p.page === 4);
-          let text = p4 ? p4.text : '';
-          const keyStart = text.indexOf('KEY TO THE TOMB');
-          if (keyStart > 0) text = text.slice(0, keyStart).trim();
-          root.innerHTML = '<div class="content-block"><h2>Legend of the Tomb &amp; Start</h2><div class="prose">' + escapeHtml(text) + '</div></div>';
-          $('#view-title').textContent = 'Legend & Start';
-          return;
-        }
-
-        if (id === 'dm-notes') {
-          const p4 = state.module.pages.find(p => p.page === 4);
-          let text = p4 ? p4.text : '';
-          const notesStart = text.indexOf('NOTES FOR THE DUNGEON MASTER');
-          const keyStart = text.indexOf('KEY TO THE TOMB');
-          if (notesStart >= 0 && keyStart >= 0) {
-            text = text.slice(notesStart, keyStart).trim();
-          }
-          root.innerHTML = '<div class="content-block"><h2>Notes for the Dungeon Master</h2><div class="prose">' + escapeHtml(text) + '</div></div>';
-          $('#view-title').textContent = 'DM Notes';
-          return;
-        }
-
-        if (id === 'key') {
-          const keyText = getKeyText();
-          const keyOnly = keyText.slice(keyText.indexOf('KEY TO THE TOMB'));
-          root.innerHTML = '<div class="content-block"><h2>Key to the Tomb</h2><div class="prose">' + escapeHtml(keyOnly) + '</div></div>';
-          $('#view-title').textContent = 'Key to the Tomb';
-          return;
-        }
-
-        if (id === 'roster') {
-          let html = '';
-          for (let i = 13; i <= 14; i++) {
-            const p = state.module.pages.find(pp => pp.page === i);
-            if (p && p.text) html += '<div class="prose">' + escapeHtml(p.text) + '</div>';
-          }
-          root.innerHTML = '<div class="content-block"><h2>Character Roster &amp; Assigning Characters</h2>' + html + '</div>';
-          $('#view-title').textContent = 'Character Roster';
-          return;
-        }
-
-        if (id === 'maps') {
-          const maps = state.module.maps.filter(m => m.likely_map);
-          let html = '<div class="content-block"><h2>Maps &amp; Illustrations</h2><p class="prose">Player handouts and dungeon maps. Click to enlarge.</p><div class="maps-grid">';
-          maps.forEach((m, i) => {
-            const dataUri = 'data:image/' + (m.format === 'png' ? 'png' : 'jpeg') + ';base64,' + m.base64;
-            html += '<figure class="graphic-card"><img src="' + dataUri + '" alt="Map ' + (i + 1) + '" data-src="' + dataUri + '" loading="lazy" /><figcaption>Page ' + m.page + ' — ' + m.width + '×' + m.height + '</figcaption></figure>';
-          });
-          html += '</div></div>';
-          root.innerHTML = html;
-          $('#view-title').textContent = 'Maps & Art';
-          root.querySelectorAll('.maps-grid img').forEach(img => {
-            img.addEventListener('click', () => openModal(img.src));
-          });
-          return;
-        }
-
-        const areaNum = parseInt(id.replace('area-', ''), 10);
-        if (!isNaN(areaNum) && areaNum >= 1 && areaNum <= 33) {
-          const area = state.areas.find(a => a.num === areaNum);
-          if (!area) {
-            root.innerHTML = '<div class="content-block"><p>Area ' + areaNum + ' not parsed.</p></div>';
-            $('#view-title').textContent = 'Area ' + areaNum;
-            return;
-          }
-          const refs = extractGraphicRefs(area.body);
-          let graphicHtml = '';
-          if (refs.length > 0 && state.graphicsByNum.length > 0) {
-            graphicHtml = '<div class="graphics-section"><h3>Illustrations for this area</h3>';
-            refs.forEach(r => {
-              const img = getGraphicImage(r.num, r.sub);
-              if (img) {
-                const dataUri = 'data:image/' + (img.format === 'png' ? 'png' : 'jpeg') + ';base64,' + img.base64;
-                const label = 'Graphic #' + r.num + (r.sub ? ' (' + r.sub + ')' : '');
-                graphicHtml += '<div class="graphic-card"><img src="' + dataUri + '" alt="' + label + '" data-src="' + dataUri + '" loading="lazy" /><figcaption>' + label + '</figcaption></div>';
-              }
-            });
-            graphicHtml += '</div>';
-          }
-          let body = area.body;
-          if (state.searchQuery) {
-            const q = state.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp('(' + q + ')', 'gi');
-            body = body.replace(re, '<mark>$1</mark>');
-          } else {
-            body = escapeHtml(body);
-          }
-          root.innerHTML = '<div class="content-block"><h2>Area ' + area.num + ': ' + escapeHtml(area.title) + '</h2><div class="prose">' + body + '</div>' + graphicHtml + '</div>';
-          $('#view-title').textContent = 'Area ' + area.num + ': ' + area.title;
-          root.querySelectorAll('.graphic-card img[data-src]').forEach(img => {
-            img.addEventListener('click', () => openModal(img.src));
-          });
-        }
       }
 
       function escapeHtml(s) {
@@ -463,71 +213,168 @@
         return div.innerHTML;
       }
 
-      function openModal(src) {
-        const modal = $('#modal');
-        $('#modal-img').src = src;
-        modal.hidden = false;
-        modal.onclick = () => { modal.hidden = true; modal.onclick = null; };
+      function dmIntro() {
+        const p4 = state.module.pages.find(p => p.page === 4);
+        const raw = p4 ? p4.text : '';
+        const keyStart = raw.indexOf('KEY TO THE TOMB');
+        let block = keyStart > 0 ? raw.slice(0, keyStart) : raw;
+        const startMarker = 'Start:';
+        const startIdx = block.indexOf(startMarker);
+        let legend = block;
+        let start = '';
+        if (startIdx >= 0) {
+          legend = block.slice(0, startIdx).replace(/NOTES FOR THE DUNGEON MASTER[\s\S]*$/i, '').trim();
+          start = block.slice(startIdx + startMarker.length).trim();
+        }
+        legend = legend.replace(/^LEGEND OF THE TOMB\s*/i, '').trim();
+        const intro = [
+          'I run the Tomb of Horrors—the labyrinthine crypt of the demi-lich Acererak. ' +
+          'Somewhere under a lost and lonely hill lies this place: terrible traps, few monsters, and riches both precious and magical. ' +
+          'Those who seek the chamber where Acererak lingers will find the passages fraught with poison, magic, and death. Only the bravest and strongest parties should attempt it, and they must be prepared to fail.',
+          start ? 'You have arrived at the site. ' + start.replace(/\s+/g, ' ').slice(0, 520) + '…' : ''
+        ].filter(Boolean).join('\n\n');
+        return intro;
       }
 
-      function renderAreaNav() {
-        const container = $('#nav-areas');
-        container.innerHTML = '';
-        state.areas.forEach(area => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'nav-item' + (state.activeId === 'area-' + area.num ? ' active' : '');
-          btn.dataset.id = 'area-' + area.num;
-          btn.setAttribute('aria-current', state.activeId === 'area-' + area.num ? 'true' : 'false');
-          btn.innerHTML = '<span class="area-num">' + area.num + '.</span> ' + escapeHtml(area.title.slice(0, 32)) + (area.title.length > 32 ? '…' : '');
-          btn.addEventListener('click', () => setActive('area-' + area.num));
-          container.appendChild(btn);
-        });
+      function appendMessage(role, bodyHtml, graphicNum) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + role;
+        const roleLabel = role === 'dm' ? 'DM' : 'You';
+        let graphicHtml = '';
+        if (role === 'dm' && graphicNum != null && state.graphicsByNum.length > 0) {
+          const img = getGraphicForArea(graphicNum);
+          if (img) {
+            const dataUri = 'data:image/' + (img.format === 'png' ? 'png' : 'jpeg') + ';base64,' + img.base64;
+            graphicHtml = '<div class="graphic"><img src="' + dataUri + '" alt="Area ' + graphicNum + '" loading="lazy" /></div>';
+          }
+        }
+        div.innerHTML =
+          '<span class="msg-role" aria-hidden="true">' + (role === 'dm' ? 'DM' : '?') + '</span>' +
+          '<div class="msg-body">' + bodyHtml + graphicHtml + '</div>';
+        messagesEl.appendChild(div);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
       }
 
-      function setActive(id) {
-        state.activeId = id;
-        $$('.nav-item').forEach(el => {
-          el.classList.toggle('active', el.dataset.id === id);
-        });
-        renderContent();
+      function getAreaFromUserMessage(text) {
+        const t = text.trim();
+        const match = t.match(/\b(?:area\s*)?(\d{1,2})\b/i) || t.match(/\b(?:go to|enter|we (?:go|enter|are at)|describe)\s*(\d{1,2})\b/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num >= 1 && num <= 33) return num;
+        }
+        return null;
       }
 
-      function wireSearch() {
-        let t;
-        $('#search').addEventListener('input', () => {
-          clearTimeout(t);
-          t = setTimeout(() => {
-            state.searchQuery = $('#search').value.trim();
-            renderContent();
-          }, 200);
-        });
+      function dmReplyForArea(areaNum) {
+        const area = state.areas.find(a => a.num === areaNum);
+        if (!area) return null;
+        const body = area.body;
+        const firstPara = body.split(/\n\n+/)[0] || body.slice(0, 600);
+        return { text: firstPara.replace(/\s+/g, ' ').trim(), graphicNum: areaNum };
       }
 
-      function init() {
-        fetch('tomb_of_horrors.json')
-          .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
-          .then(data => {
-            state.module = data;
-            state.areas = parseAreas();
-            buildGraphicsIndex();
-            $('#loading').hidden = true;
-            renderAreaNav();
-            setActive('legend');
-            wireSearch();
+      function getModuleContext() {
+        if (!state.module) return '';
+        return getKeyText();
+      }
+
+      function getDmReplyFallback(userText) {
+        const areaNum = getAreaFromUserMessage(userText);
+        if (areaNum != null) {
+          const reply = dmReplyForArea(areaNum);
+          if (reply) return reply;
+        }
+        return {
+          text: 'Describe where you go or what you do—for example, "We go to area 3" or "We search the entrance."',
+          graphicNum: null
+        };
+      }
+
+      async function invokeDmApi(userContent) {
+        const cfg = window.DM_CONFIG;
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) {
+          return null;
+        }
+        state.messageHistory.push({ role: 'user', content: userContent });
+        const res = await fetch(cfg.supabaseUrl + '/functions/v1/dm-invoke', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + cfg.supabaseAnonKey
+          },
+          body: JSON.stringify({
+            messages: state.messageHistory,
+            moduleContext: getModuleContext()
           })
-          .catch(err => {
-            $('#loading').className = 'error';
-            $('#loading').textContent = 'Failed to load tomb_of_horrors.json. Run from a local server (e.g. python -m http.server 8000) and open dm.html.';
-          });
-
-        $('#nav-sections').addEventListener('click', (e) => {
-          const btn = e.target.closest('.nav-item[data-id]');
-          if (btn) setActive(btn.dataset.id);
         });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          throw new Error(err.detail || err.error || res.statusText);
+        }
+        const data = await res.json();
+        const content = data.content || '';
+        state.messageHistory.push({ role: 'dm', content });
+        return content;
       }
 
-      init();
+      function submitUserMessage() {
+        const text = input.value.trim();
+        if (!text || !state.module) return;
+        input.value = '';
+        sendBtn.disabled = true;
+        appendMessage('user', '<p>' + escapeHtml(text) + '</p>', null);
+
+        const cfg = window.DM_CONFIG;
+        if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
+          const typingId = 'typing-' + Date.now();
+          appendMessage('dm', '<p class="loading-msg" id="' + typingId + '">DM is thinking…</p>', null);
+          invokeDmApi(text)
+            .then((content) => {
+              const el = $('#' + typingId);
+              if (el) {
+                el.outerHTML = '<p>' + escapeHtml(content || '(No response.)') + '</p>';
+              } else if (content) {
+                appendMessage('dm', '<p>' + escapeHtml(content) + '</p>', null);
+              }
+            })
+            .catch((err) => {
+              const el = $('#' + typingId);
+              if (el) el.outerHTML = '<p class="error-msg">' + escapeHtml('Error: ' + err.message) + '</p>';
+              else appendMessage('dm', '<p class="error-msg">' + escapeHtml('DM error: ' + err.message) + '</p>', null);
+            })
+            .finally(() => {
+              sendBtn.disabled = false;
+              input.focus();
+            });
+        } else {
+          const reply = getDmReplyFallback(text);
+          appendMessage('dm', '<p>' + escapeHtml(reply.text) + '</p>', reply.graphicNum);
+          state.messageHistory.push({ role: 'user', content: text }, { role: 'dm', content: reply.text });
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitUserMessage();
+      });
+
+      fetch('tomb_of_horrors.json')
+        .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+        .then(data => {
+          state.module = data;
+          state.areas = parseAreas();
+          buildGraphicsIndex();
+          state.loading = false;
+          const intro = dmIntro();
+          state.messageHistory = [{ role: 'dm', content: intro }];
+          appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
+        })
+        .catch(() => {
+          state.loading = false;
+          messagesEl.innerHTML = '<p class="error-msg">Failed to load the module. Check your connection and refresh.</p>';
+        });
     })();
   </script>
 </body>

@@ -3,22 +3,152 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dungeon — AI World Models via D&D</title>
+  <title>DWMB — Dungeon World Model Benchmark</title>
   <style>
-    :root { --bg: #0f0f12; --text: #e8e6e3; --muted: #8b8685; --accent: #c9a227; }
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1918;
+      --text: #e8e6e3;
+      --muted: #8b8685;
+      --accent: #c9a227;
+      --accent-dim: #a68520;
+    }
     * { box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; line-height: 1.6; }
-    h1 { font-size: 1.75rem; font-weight: 600; color: var(--accent); margin-bottom: 0.5rem; }
-    p { max-width: 36rem; margin: 0; color: var(--muted); }
-    a { color: var(--accent); }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+    .wrap { max-width: 40rem; margin: 0 auto; }
+
+    /* Header */
+    header { margin-bottom: 2.5rem; }
+    .site-title {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    .tagline {
+      font-size: 1rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* Report block = hero */
+    .report-hero {
+      background: var(--surface);
+      border: 1px solid rgba(201, 162, 39, 0.2);
+      border-radius: 8px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2rem;
+    }
+    .report-hero p {
+      margin: 0 0 1rem;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    .report-hero p:last-of-type { margin-bottom: 1.25rem; }
+    .report-hero .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .report-hero a.primary {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--bg);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-right: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .report-hero a.primary:hover { background: var(--accent-dim); }
+    .report-hero a.secondary {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .report-hero a.secondary:hover { text-decoration: underline; }
+
+    /* Other links */
+    .other h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+    .other ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .other li { margin-bottom: 0.5rem; }
+    .other a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .other a:hover { text-decoration: underline; }
+    .other .desc { color: var(--muted); font-size: 0.9rem; }
+
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h1>Dungeon</h1>
-  <p>Exploring the use of tabletop role-playing games (e.g., D&D) to train and evaluate <strong>AI world models</strong>—agents that maintain coherent, consistent representations of dynamic environments, narrative state, and character knowledge.</p>
-  <p style="margin-top: 1rem;"><a href="report.html">DWMB Report</a> — Dungeon World Model Benchmark: benchmark definition and preregistered protocol for evaluating latent world models.</p>
-  <p style="margin-top: 0.5rem;"><a href="report-gygax.html">DWMB (Gygax voice)</a> — Same report rewritten in the voice of Gary Gygax.</p>
-  <p style="margin-top: 0.5rem;"><a href="dm.html">Dungeon Master</a> — Run the Tomb of Horrors module (S1) from the extracted JSON.</p>
-  <p style="margin-top: 1.5rem;"><a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a></p>
+  <div class="wrap">
+    <header>
+      <p class="site-title">Dungeon</p>
+      <h1>Dungeon World Model Benchmark</h1>
+      <p class="tagline">Structured adversarial environments for evaluating latent world models</p>
+    </header>
+
+    <section class="report-hero">
+      <p>
+        <strong>DWMB</strong> is a suite of compact, procedurally generated grid-world POMDPs designed to require agents to <em>infer</em> latent hazards, topology, and non-local causal triggers. Traps look like safe floor; switches far away arm or disarm them. We propose <strong>Preemptive Inference Rate (PIR)</strong>: the fraction of hazards whose danger was predicted above threshold <em>before</em> first activation—separating safe latent inference from “unsafe success” by trial-and-error.
+      </p>
+      <p>
+        The document is a <strong>benchmark definition and preregistered evaluation protocol</strong>: formal POMDP spec, JSON schema, difficulty tiers T1–T5, uniform belief-extraction convention, baselines (model-free RL, MuZero-style, Dreamer/RSSM, LLM+memory, JEPA-style), and statistical analysis plan. No empirical results yet; the hypothesis that belief-based agents achieve higher PIR is falsifiable and pending validation.
+      </p>
+      <p class="meta">Benchmark definition and protocol · In the voice of Gary Gygax</p>
+      <a href="report.html" class="primary">Read the report</a>
+    </section>
+
+    <section class="other">
+      <h2>More from this project</h2>
+      <ul>
+        <li><a href="dm.html">Dungeon Master</a> <span class="desc">— Run the Tomb of Horrors module (S1) from extracted JSON.</span></li>
+        <li><a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a> <span class="desc">— Repo and future code/data release.</span></li>
+      </ul>
+    </section>
+
+    <footer>
+      <a href="https://castalia.institute">Castalia Institute</a> · Dungeon project
+    </footer>
+  </div>
 </body>
 </html>

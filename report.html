@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DWMB — Dungeon World Model Benchmark</title>
+  <title>DWMB — Dungeon World Model Benchmark (Gary Gygax)</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -36,13 +36,12 @@
 <body>
   <nav>
     <a href="index.html">Dungeon</a>
-    <a href="report.html">DWMB Report</a>
-    <a href="report-gygax.html">DWMB (Gygax voice)</a>
+    <a href="report.html">Report</a>
     <a href="dm.html">Dungeon Master</a>
   </nav>
   <div id="report"><p class="loading">Loading report…</p></div>
   <script>
-    const file = 'deep-research-report.md';
+    const file = 'deep-research-report-gygax.md';
     fetch(file)
       .then(r => r.ok ? r.text() : Promise.reject(r.status))
       .then(md => {
