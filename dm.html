@@ -230,7 +230,7 @@
           start = block.slice(startIdx + startMarker.length).trim();
         }
         legend = legend.replace(/^LEGEND OF THE TOMB\s*/i, '').trim();
-        const startTrim = start ? start.replace(/\s+/g, ' ').slice(0, 520) + '…' : '';
+        const startTrim = start ? start.replace(/\s+/g, ' ').slice(0, 2400) + (start.length > 2400 ? '…' : '') : '';
         const intro = [
           'I run the Tomb of Horrors—the labyrinthine crypt of the demi-lich Acererak. ' +
           'Somewhere under a lost and lonely hill lies this place: terrible traps, few monsters, and riches both precious and magical. ' +

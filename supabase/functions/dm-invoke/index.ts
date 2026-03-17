@@ -148,7 +148,7 @@ ${moduleContext.slice(0, 28000)}
       parts: [{ text: systemInstruction }],
     },
     generationConfig: {
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
       temperature: 0.7,
     },
   };
