@@ -1,30 +1,85 @@
-# Dungeon
+# Dungeon World Model Benchmark (DWMB)
 
-**Exploring using D&D to train AI World Models.**
+Implementation of the **Dungeon World Model Benchmark** from the [deep-research-report](deep-research-report.md): POMDP grid-worlds with hidden hazards and non-local causality, and the **Preemptive Inference Rate (PIR)** metric.
 
-This project investigates how tabletop role-playing games (e.g., Dungeons & Dragons) can be used to train and evaluate AI world models—agents that maintain coherent, consistent representations of dynamic environments, narrative state, and character knowledge.
+## Quick start
 
-### Running the Tomb of Horrors (S1) DM
+```bash
+python -m venv .venv && source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python scripts/evaluate.py instances/unit_test/worked_example_16x16.json
+```
 
-The DM is a **chat-only** page: the DM (Gemini via Vertex AI) speaks first with an intro, then you describe actions and get replies.
+## Keys (Google & Supabase)
 
-**Option A — With Gemini (Supabase Edge Function + Vertex AI)**
+- **Supabase** (optional): store instances, runs, and metrics. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env`, or use the same vars as [Inquiry.Institute](../Inquiry.Institute) (e.g. copy `../Inquiry.Institute/.env.local` or symlink).
+- **Google / Vertex AI** (optional): for the LLM baseline agent; use `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_SERVICE_ACCOUNT_JSON` (or load from Inquiry.Institute).
 
-1. Create a Supabase project and deploy the Edge Function:
-   ```bash
-   cd supabase && supabase functions deploy dm-invoke
-   ```
-2. Set Edge Function secrets in Supabase Dashboard: `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_SERVICE_ACCOUNT_JSON` (see `supabase/functions/README.md`).
-3. In `dm.html`, set your project URL and anon key:
-   ```js
-   window.DM_CONFIG = { supabaseUrl: 'https://YOUR_REF.supabase.co', supabaseAnonKey: 'YOUR_ANON_KEY' };
-   ```
-4. Serve the site over HTTP and open `dm.html`. The chat will call the Edge Function, which uses Vertex AI (Gemini) to run the DM.
+See [.env.example](.env.example). Config is loaded from the project `.env` first, then `../Inquiry.Institute/.env.local` or `../Inquiry.Institute/.env`.
 
-**Option B — Without backend**
+## Project layout
 
-If `DM_CONFIG` is not set, the DM falls back to simple area lookups: mention a number 1–33 (e.g. “we go to area 3”) to get that area’s text from the module.
+| Path | Description |
+|------|-------------|
+| `dwmb/` | Core: schema, env, validation, config, generator, Supabase storage |
+| `instances/unit_test/` | Canonical unit-test dungeons (e.g. worked 16×16) |
+| `instances/train`, `test`, `counterfactual/` | Generated splits (see below) |
+| `scripts/evaluate.py` | Run agent on instance, compute PIR, optional Supabase sync |
+| `scripts/generate_splits.py` | Generate train/test/counterfactual instance JSONs per tier |
+| `supabase/migrations/` | DB tables for `dwmb_instances`, `dwmb_runs`, `dwmb_metrics` |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Full 6-phase implementation plan |
 
----
+## Generate instance splits (Phase 2)
 
-*InquiryInstitute · [dungeon.castalia.institute](https://dungeon.castalia.institute)*
+```bash
+# Small: 3 train + 2 test per tier for tiers 1–2
+python scripts/generate_splits.py --out instances --train-per-tier 3 --test-per-tier 2 --tiers 1 2
+
+# Full: 50 train + 20 test per tier (T1–T5), 2 counterfactuals per test
+python scripts/generate_splits.py --out instances --train-per-tier 50 --test-per-tier 20
+```
+
+Output: `instances/train/*.json`, `instances/test/*.json`, `instances/counterfactual/*.json`, `instances/seeds_manifest.json`.
+
+## Agents and training (Phase 3)
+
+**Agents:** `random`, `heuristic`, `ppo_lstm` (optional PyTorch). Each exposes `act(obs, hazards)` → `(action, per_hazard_probs)` for PIR.
+
+```bash
+# Single instance
+python scripts/evaluate.py instances/unit_test/worked_example_16x16.json --agent heuristic
+
+# Batch: aggregate over instances and seeds
+python scripts/evaluate_batch.py instances/test --agent random --seeds 3 --out results.json
+python scripts/evaluate_batch.py instances/seeds_manifest.json --manifest test --agent heuristic
+```
+
+**Train PPO+LSTM** (optional, requires `torch`):
+
+```bash
+pip install torch
+python scripts/train.py --instances instances/train --steps 5000 --out runs/ppo --save-every 1000
+python scripts/evaluate.py instances/unit_test/worked_example_16x16.json --agent ppo_lstm --checkpoint runs/ppo/ckpt_final.pt
+```
+
+## Apply Supabase migrations
+
+If using Supabase, create the tables:
+
+```bash
+# If using Supabase CLI (from project root)
+supabase db push
+
+# Or run the SQL in supabase/migrations/20250317000000_dwmb_tables.sql
+# in the Supabase SQL editor.
+```
+
+## Evaluate and sync to Supabase
+
+```bash
+python scripts/evaluate.py instances/unit_test/worked_example_16x16.json --agent random --seed 42 --sync --out results.json
+```
+
+## License
+
+See repository license.

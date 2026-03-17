@@ -1,0 +1,74 @@
+{
+  "version": "dwmb-0.1",
+  "grid": {
+    "height": 10,
+    "width": 12,
+    "tiles": "WWWWWWWWWWWWW..........WW..........WW..........WW..........WW..........WW..........WW.......G..WW..........WWWWWWWWWWWWW"
+  },
+  "visibility": {
+    "radius": 2,
+    "line_of_sight": true
+  },
+  "entities": {
+    "agent_start": [
+      5,
+      1
+    ],
+    "goal": [
+      7,
+      8
+    ]
+  },
+  "topology": {
+    "doors": [],
+    "secret_edges": []
+  },
+  "hidden_state": {
+    "traps": [
+      {
+        "pos": [
+          1,
+          3
+        ],
+        "kind": "slick",
+        "armed": true,
+        "disarm_switch": "s1"
+      }
+    ],
+    "switches": [
+      {
+        "id": "s1",
+        "pos": [
+          4,
+          6
+        ],
+        "effects": [
+          {
+            "trap_pos": [
+              1,
+              3
+            ],
+            "armed": false
+          }
+        ]
+      }
+    ]
+  },
+  "reward": {
+    "goal": 1.0,
+    "step": -0.001,
+    "trap": -0.2
+  },
+  "terminal": {
+    "goal": true,
+    "death_on_trap": false
+  },
+  "eval": {
+    "hazards_for_PIR": [
+      [
+        1,
+        3
+      ]
+    ]
+  }
+}

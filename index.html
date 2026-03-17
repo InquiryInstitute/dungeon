@@ -3,152 +3,255 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DWMB — Dungeon World Model Benchmark</title>
+  <title>Dungeon — World Model Benchmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f0f12;
-      --surface: #1a1918;
+      --bg: #0c0b0b;
+      --bg-elevated: #141312;
+      --surface: #1c1a19;
+      --border: rgba(201, 162, 39, 0.12);
       --text: #e8e6e3;
-      --muted: #8b8685;
+      --text-muted: #8b8685;
       --accent: #c9a227;
-      --accent-dim: #a68520;
+      --accent-soft: rgba(201, 162, 39, 0.15);
+      --font-head: 'Syne', system-ui, sans-serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
     }
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.65;
       color: var(--text);
+      background: var(--bg);
       margin: 0;
       min-height: 100vh;
-      line-height: 1.6;
-      padding: 2rem;
     }
-    .wrap { max-width: 40rem; margin: 0 auto; }
+
+    /* Subtle grid texture */
+    .page {
+      position: relative;
+      min-height: 100vh;
+    }
+    .page::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(201,162,39,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,162,39,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
 
     /* Header */
-    header { margin-bottom: 2.5rem; }
-    .site-title {
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.25rem;
+    header {
+      margin-bottom: 3.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
     }
-    h1 {
-      font-size: 1.85rem;
+    .site-label {
+      font-family: var(--font-head);
+      font-size: 0.7rem;
       font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
       color: var(--accent);
       margin: 0 0 0.5rem;
-      line-height: 1.25;
     }
-    .tagline {
-      font-size: 1rem;
-      color: var(--muted);
-      margin: 0;
-    }
-
-    /* Report block = hero */
-    .report-hero {
-      background: var(--surface);
-      border: 1px solid rgba(201, 162, 39, 0.2);
-      border-radius: 8px;
-      padding: 1.5rem 1.75rem;
-      margin-bottom: 2rem;
-    }
-    .report-hero p {
-      margin: 0 0 1rem;
+    h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
       color: var(--text);
-      font-size: 0.95rem;
-    }
-    .report-hero p:last-of-type { margin-bottom: 1.25rem; }
-    .report-hero .meta {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-    .report-hero a.primary {
-      display: inline-block;
-      background: var(--accent);
-      color: var(--bg);
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 600;
-      text-decoration: none;
-      margin-right: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-    .report-hero a.primary:hover { background: var(--accent-dim); }
-    .report-hero a.secondary {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    .report-hero a.secondary:hover { text-decoration: underline; }
-
-    /* Other links */
-    .other h2 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
       margin: 0 0 0.75rem;
     }
-    .other ul {
+    .tagline {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      margin: 0;
+      max-width: 36rem;
+    }
+
+    /* Sections */
+    section.block {
+      margin-bottom: 3rem;
+    }
+    .block-title {
+      font-family: var(--font-head);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 1.25rem;
+    }
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.25rem;
+    }
+    .card:last-child { margin-bottom: 0; }
+    .card h2 {
+      font-family: var(--font-head);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 0.5rem;
+    }
+    .card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+    .card p + p { margin-top: 0.75rem; }
+    .card .highlight { color: var(--text); }
+    .card a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .card a:hover { text-decoration: underline; }
+
+    /* CTA row */
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: #b8921f; color: var(--bg); }
+    .btn-secondary {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .btn-secondary:hover { background: rgba(201, 162, 39, 0.25); }
+
+    /* Implementation list */
+    .impl-list {
       list-style: none;
       padding: 0;
-      margin: 0;
+      margin: 0.5rem 0 0;
     }
-    .other li { margin-bottom: 0.5rem; }
-    .other a {
+    .impl-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+    .impl-list code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .impl-list span.desc { color: var(--text-muted); }
+
+    /* Footer */
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    footer a {
       color: var(--accent);
       text-decoration: none;
     }
-    .other a:hover { text-decoration: underline; }
-    .other .desc { color: var(--muted); font-size: 0.9rem; }
-
-    footer {
-      margin-top: 2.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--surface);
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-    footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <p class="site-title">Dungeon</p>
-      <h1>Dungeon World Model Benchmark</h1>
-      <p class="tagline">Structured adversarial environments for evaluating latent world models</p>
-    </header>
+  <div class="page">
+    <div class="wrap">
+      <header>
+        <p class="site-label">Inquiry Institute</p>
+        <h1>Dungeon</h1>
+        <p class="tagline">A benchmark and implementation for evaluating AI world models using structured adversarial environments—inspired by D&D and latent inference.</p>
+      </header>
 
-    <section class="report-hero">
-      <p>
-        <strong>DWMB</strong> is a suite of compact, procedurally generated grid-world POMDPs designed to require agents to <em>infer</em> latent hazards, topology, and non-local causal triggers. Traps look like safe floor; switches far away arm or disarm them. We propose <strong>Preemptive Inference Rate (PIR)</strong>: the fraction of hazards whose danger was predicted above threshold <em>before</em> first activation—separating safe latent inference from “unsafe success” by trial-and-error.
-      </p>
-      <p>
-        The document is a <strong>benchmark definition and preregistered evaluation protocol</strong>: formal POMDP spec, JSON schema, difficulty tiers T1–T5, uniform belief-extraction convention, baselines (model-free RL, MuZero-style, Dreamer/RSSM, LLM+memory, JEPA-style), and statistical analysis plan. No empirical results yet; the hypothesis that belief-based agents achieve higher PIR is falsifiable and pending validation.
-      </p>
-      <p class="meta">Benchmark definition and protocol · In the voice of Gary Gygax</p>
-      <a href="report.html" class="primary">Read the report</a>
-    </section>
+      <section class="block" aria-labelledby="research-heading">
+        <h2 class="block-title" id="research-heading">Research</h2>
+        <div class="card">
+          <h2>Dungeon World Model Benchmark (DWMB)</h2>
+          <p>
+            <span class="highlight">DWMB</span> is a suite of compact, procedurally generated grid-world POMDPs designed to require agents to <em>infer</em> latent hazards, topology, and non-local causal triggers. Traps look like safe floor; switches far away arm or disarm them. The benchmark isolates whether agents build and use a coherent belief over hidden structure—rather than succeeding by trial-and-error or luck.
+          </p>
+          <p>
+            We propose <strong>Preemptive Inference Rate (PIR)</strong>: the fraction of hazards whose danger was predicted above threshold <em>before</em> first activation. That separates safe latent inference from “unsafe success.” The document is a <strong>benchmark definition and preregistered evaluation protocol</strong>: formal POMDP spec, JSON schema, difficulty tiers T1–T5, uniform belief-extraction convention, baselines (model-free RL, MuZero-style, Dreamer/RSSM, LLM+memory, JEPA-style), and statistical analysis plan. The hypothesis that belief-based agents achieve higher PIR is falsifiable and pending validation.
+          </p>
+          <div class="cta-row">
+            <a href="report.html" class="btn btn-primary">Read the full report</a>
+            <a href="deep-research-report.md" class="btn btn-secondary">Markdown (deep research)</a>
+          </div>
+        </div>
+      </section>
 
-    <section class="other">
-      <h2>More from this project</h2>
-      <ul>
-        <li><a href="dm.html">Dungeon Master</a> <span class="desc">— Run the Tomb of Horrors module (S1) from extracted JSON.</span></li>
-        <li><a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a> <span class="desc">— Repo and future code/data release.</span></li>
-      </ul>
-    </section>
+      <section class="block" aria-labelledby="impl-heading">
+        <h2 class="block-title" id="impl-heading">Implementation</h2>
+        <div class="card">
+          <h2>Code &amp; infrastructure</h2>
+          <p>
+            The repo provides the DWMB schema, canonical unit-test dungeons, evaluation scripts, baseline agents, and optional Supabase storage for runs and metrics.
+          </p>
+          <ul class="impl-list">
+            <li><code>dwmb/</code> <span class="desc">— Core: schema, env, validation, generator, Supabase storage</span></li>
+            <li><code>instances/unit_test/</code> <span class="desc">— Canonical dungeons (e.g. worked 16×16)</span></li>
+            <li><code>scripts/evaluate.py</code> <span class="desc">— Run agent on instance, compute PIR, optional sync</span></li>
+            <li><code>scripts/generate_splits.py</code> <span class="desc">— Generate train/test/counterfactual JSONs per tier</span></li>
+            <li><code>scripts/train.py</code> <span class="desc">— Train PPO+LSTM (optional)</span></li>
+            <li><code>supabase/</code> <span class="desc">— Migrations and edge functions for instances, runs, metrics</span></li>
+          </ul>
+          <p style="margin-top: 1rem;">
+            Agents: <code>random</code>, <code>heuristic</code>, <code>ppo_lstm</code>; each exposes per-hazard beliefs for PIR. See <a href="https://github.com/InquiryInstitute/dungeon">InquiryInstitute/dungeon</a> for quick start and layout.
+          </p>
+          <div class="cta-row">
+            <a href="dm.html" class="btn btn-primary">Dungeon Master (Tomb of Horrors S1)</a>
+            <a href="https://github.com/InquiryInstitute/dungeon" class="btn btn-secondary">View on GitHub</a>
+          </div>
+        </div>
+      </section>
 
-    <footer>
-      <a href="https://castalia.institute">Castalia Institute</a> · Dungeon project
-    </footer>
+      <footer>
+        <a href="https://castalia.institute">Castalia Institute</a> · Dungeon project · World model benchmark
+      </footer>
+    </div>
   </div>
 </body>
 </html>
