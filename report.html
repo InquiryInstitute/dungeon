@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DWMB — Dungeon World Model Benchmark</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root { --bg: #0f0f12; --text: #e8e6e3; --muted: #8b8685; --accent: #c9a227; --card: #1a1918; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.6; padding: 1rem 2rem 2rem; }
+    nav { margin-bottom: 1.5rem; }
+    nav a { color: var(--accent); margin-right: 1rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; color: var(--accent); margin-top: 0; }
+    #report { max-width: 48rem; margin: 0 auto; }
+    #report :deep(h1) { font-size: 1.35rem; color: var(--accent); }
+    #report :deep(h2) { font-size: 1.15rem; margin-top: 1.5rem; }
+    #report :deep(h3) { font-size: 1rem; margin-top: 1rem; }
+    #report :deep(p) { margin: 0.5rem 0; }
+    #report :deep(table) { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.9rem; }
+    #report :deep(th), #report :deep(td) { border: 1px solid var(--muted); padding: 0.4rem 0.6rem; text-align: left; }
+    #report :deep(th) { background: var(--card); color: var(--accent); }
+    #report :deep(ul), #report :deep(ol) { margin: 0.5rem 0; padding-left: 1.5rem; }
+    #report :deep(blockquote) { border-left: 3px solid var(--accent); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+    #report :deep(code) { background: var(--card); padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+    #report :deep(pre) { background: var(--card); padding: 1rem; overflow-x: auto; border-radius: 4px; }
+    #report :deep(pre code) { padding: 0; background: none; }
+    #report :deep(details) { margin: 0.5rem 0; }
+    #report :deep(summary) { cursor: pointer; color: var(--accent); }
+    #report :deep(img) { max-width: 100%; }
+    #report :deep(.loading) { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Dungeon</a>
+    <a href="report.html">DWMB Report</a>
+    <a href="report-gygax.html">DWMB (Gygax voice)</a>
+    <a href="dm.html">Dungeon Master</a>
+  </nav>
+  <div id="report"><p class="loading">Loading report…</p></div>
+  <script>
+    const file = 'deep-research-report.md';
+    fetch(file)
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(md => {
+        document.getElementById('report').innerHTML = marked.parse(md, { gfm: true });
+        if (window.MathJax) MathJax.typesetPromise([document.getElementById('report')]).catch(() => {});
+      })
+      .catch(() => { document.getElementById('report').innerHTML = '<p>Report not found. Ensure <code>' + file + '</code> is in the repo.</p>'; });
+  </script>
+</body>
+</html>
