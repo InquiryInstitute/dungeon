@@ -163,6 +163,30 @@
     .stats-toggle {
       margin-left: auto;
     }
+    .file-protocol-tip {
+      background: rgba(184, 134, 11, 0.15);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin: 0.5rem 0;
+    }
+    .file-protocol-tip button {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .file-protocol-tip button:hover { color: var(--text); }
     .stats-panel {
       position: fixed;
       top: 0;
@@ -318,6 +342,10 @@
       <button type="button" id="btn-load-classic">Load Tomb of Horrors (classic)</button>
       <button type="button" id="btn-stats" class="stats-toggle" aria-label="Character stats">Stats</button>
     </div>
+    <div class="file-protocol-tip" id="file-protocol-tip" style="display: none;" role="status">
+      <span>To use the AI DM, open this page from a local server (browsers block requests from file://). In this folder run: <code>npx serve .</code> or <code>python -m http.server 8000</code>, then open <code>http://localhost:3000/dm.html</code> (or :8000).</span>
+      <button type="button" id="file-protocol-tip-dismiss" aria-label="Dismiss">×</button>
+    </div>
     <div class="messages" id="messages">
       <p class="loading-msg" id="loading-state">Starting…</p>
     </div>
@@ -331,10 +359,11 @@
 
   <script>
     (function () {
-      // Set these for your Supabase project (Edge Function dm-invoke + Vertex Gemini).
+      // Uses ask-faculty (Inquiry.Institute) — faculty model a.tolkien or a.gygax.
       window.DM_CONFIG = window.DM_CONFIG || {
         supabaseUrl: 'https://pilmscrodlitdrygabvo.supabase.co',
-        supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpbG1zY3JvZGxpdGRyeWdhYnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTAyMTAsImV4cCI6MjA3NzkyNjIxMH0.BZxQiztlwtKjhL1Jjjqd0CnvfIbuwYHV0YL2s50cQiA'
+        supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpbG1zY3JvZGxpdGRyeWdhYnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTAyMTAsImV4cCI6MjA3NzkyNjIxMH0.BZxQiztlwtKjhL1Jjjqd0CnvfIbuwYHV0YL2s50cQiA',
+        askFacultyModel: 'a.tolkien'
       };
 
       const state = {
@@ -399,13 +428,17 @@
       }
 
       function useGeneratedModule(module) {
+        if (!module || !module.legend) {
+          showError('Invalid dungeon data (missing module or legend).');
+          return;
+        }
         state.module = module;
         state.areas = parseGeneratedAreas(module);
         state.graphicsByNum = [];
         state.isGenerated = true;
         state.loading = false;
         clearLoading();
-        const intro = module.legend.backstory;
+        const intro = module.legend.backstory || 'The dungeon awaits. What do you do?';
         state.messageHistory = [{ role: 'dm', content: intro }];
         messagesEl.innerHTML = '';
         appendMessage('dm', '<p>' + escapeHtml(intro) + '</p>', null);
@@ -547,31 +580,64 @@
         };
       }
 
+      function isFileProtocol() {
+        return typeof window !== 'undefined' && window.location && window.location.protocol === 'file:';
+      }
+
       async function invokeDmApi(userContent) {
         const cfg = window.DM_CONFIG;
         if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) {
           return null;
         }
+        if (isFileProtocol()) {
+          throw new Error('Page opened from file:// — open from a local server instead (e.g. npx serve . or python -m http.server 8000)');
+        }
         state.messageHistory.push({ role: 'user', content: userContent });
-        const res = await fetch(cfg.supabaseUrl + '/functions/v1/dm-invoke', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + cfg.supabaseAnonKey
-          },
-          body: JSON.stringify({
-            messages: state.messageHistory,
-            moduleContext: getModuleContext()
-          })
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const moduleContext = getModuleContext();
+        const cap = 28000;
+        const ref = moduleContext.length > cap ? moduleContext.slice(0, cap) + '\n\n[truncated]' : moduleContext;
+        // ask-faculty: OpenAI-style messages; prepend DM reference, then dm->assistant, user->user
+        const openAiMessages = [
+          { role: 'user', content: 'You are the Dungeon Master for this adventure. Use the reference below only to know what is in the world and what happens. Do not quote it; narrate in character. Never reveal traps, secret doors, or mechanics.\n\n<reference>\n' + ref + '\n</reference>\n\nSet the scene from the backstory when you first reply; then respond to the players.' }
+        ];
+        for (let i = 0; i < state.messageHistory.length; i++) {
+          const m = state.messageHistory[i];
+          openAiMessages.push({
+            role: m.role === 'dm' ? 'assistant' : 'user',
+            content: m.content
+          });
+        }
+        const body = {
+          model: cfg.askFacultyModel || 'a.tolkien',
+          messages: openAiMessages,
+          max_tokens: 4096,
+          temperature: 0.7
+        };
+        let res;
+        try {
+          res = await fetch(cfg.supabaseUrl + '/functions/v1/ask-faculty', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + cfg.supabaseAnonKey
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+            mode: 'cors'
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: res.statusText }));
           throw new Error(err.detail || err.error || res.statusText);
         }
         const data = await res.json();
-        const content = data.content || '';
-        state.messageHistory.push({ role: 'dm', content });
-        return content;
+        const content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+        state.messageHistory.push({ role: 'dm', content: content.trim() || '(No response.)' });
+        return content.trim() || '(No response.)';
       }
 
       function submitUserMessage() {
@@ -595,9 +661,14 @@
               }
             })
             .catch((err) => {
+              const reply = getDmReplyFallback(text);
+              state.messageHistory.push({ role: 'dm', content: reply.text });
               const el = $('#' + typingId);
-              if (el) el.outerHTML = '<p class="error-msg">' + escapeHtml('Error: ' + err.message) + '</p>';
-              else appendMessage('dm', '<p class="error-msg">' + escapeHtml('DM error: ' + err.message) + '</p>', null);
+              if (el) {
+                el.outerHTML = '<p>' + escapeHtml(reply.text) + '</p><p class="loading-msg" style="font-size:0.85rem;">(AI DM unavailable—' + escapeHtml(err.message) + '; reply from module key.)</p>';
+              } else {
+                appendMessage('dm', '<p>' + escapeHtml(reply.text) + '</p><p class="loading-msg" style="font-size:0.85rem;">(AI DM unavailable—' + escapeHtml(err.message) + '; reply from module key.)</p>', reply.graphicNum);
+              }
             })
             .finally(() => {
               sendBtn.disabled = false;
@@ -626,6 +697,9 @@
         state.loading = false;
         clearLoading();
         messagesEl.innerHTML = '<p class="error-msg">' + escapeHtml(msg) + '</p>';
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
       }
 
       function loadModule() {
@@ -673,8 +747,15 @@
       }
 
       document.getElementById('btn-generate').addEventListener('click', () => {
-        if (typeof window.generateDungeon !== 'function') return;
-        useGeneratedModule(window.generateDungeon());
+        if (typeof window.generateDungeon !== 'function') {
+          showError('Dungeon generator script not loaded. Ensure dungeon-generator.js is in the same folder as dm.html.');
+          return;
+        }
+        try {
+          useGeneratedModule(window.generateDungeon());
+        } catch (e) {
+          showError('Could not generate dungeon: ' + (e?.message || String(e)));
+        }
       });
 
       document.getElementById('btn-load-classic').addEventListener('click', () => {
@@ -702,14 +783,22 @@
       document.getElementById('stats-close').addEventListener('click', closeStatsPanel);
       statsBackdrop.addEventListener('click', closeStatsPanel);
 
+      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+        var tipEl = document.getElementById('file-protocol-tip');
+        if (tipEl && !sessionStorage.getItem('dm-file-tip-dismissed')) {
+          tipEl.style.display = 'flex';
+          document.getElementById('file-protocol-tip-dismiss').addEventListener('click', function () {
+            tipEl.style.display = 'none';
+            sessionStorage.setItem('dm-file-tip-dismissed', '1');
+          });
+        }
+      }
+
       try {
         startWithRandomDungeon();
       } catch (e) {
         showError('Could not start: ' + (e?.message || String(e)));
       }
-
-      input.disabled = true;
-      sendBtn.disabled = true;
     })();
   </script>
 </body>

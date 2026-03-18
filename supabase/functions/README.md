@@ -1,18 +1,22 @@
 # Edge Function: dm-invoke
 
-Calls **Vertex AI (Gemini)** to run the Tomb of Horrors DM. The client sends the conversation history and optional module context; the function returns the model’s reply.
+Calls **Gemini** to run the Tomb of Horrors DM. The client sends the conversation history and optional module context; the function returns the model’s reply.
 
-## Secrets (Supabase Dashboard → Project Settings → Edge Functions)
+## Secrets (required for AI DM)
 
-Set these so the function can authenticate to Google Cloud:
+The Edge Function reads from **Supabase** Edge Function secrets (or your local `.env` via the script). Prefer the **API key** path; use Vertex only if you already have a service account with Vertex AI User.
 
-| Secret | Description |
-|--------|-------------|
-| `VERTEX_PROJECT_ID` | Google Cloud project ID (e.g. `my-project`) |
-| `VERTEX_LOCATION` | Vertex AI region (e.g. `us-central1`) |
-| `VERTEX_SERVICE_ACCOUNT_JSON` | Full contents of the service account key JSON (create in GCP Console → IAM → Service Accounts → Keys). Must include `client_email` and `private_key`. |
+**Preferred – API key (no IAM)**  
+- `GCP_API_KEY` — API key from [Google AI Studio](https://aistudio.google.com/apikey) (Generative Language API). No project IAM or service account needed.
 
-The service account needs the **Vertex AI User** role (or similar) so it can call `generateContent`.
+Set in Dashboard → Edge Functions → Secrets, or put `GCP_API_KEY` in `.env` / `.env.local` and run:
+
+```bash
+./scripts/set-supabase-vertex-secrets.sh
+```
+
+**Alternative – Vertex AI**  
+- `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_SERVICE_ACCOUNT_JSON` — service account must have **Vertex AI User** role. Use the same script if those are in `.env`.
 
 ## Deploy
 

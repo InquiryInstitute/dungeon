@@ -29,9 +29,8 @@ To have the DM use Vertex AI (Gemini) instead of the fallback:
    `YOUR_PROJECT_REF` is the short id in your project URL (e.g. `abcdefgh`).
 
 3. **Set Edge Function secrets** (Dashboard → Project Settings → Edge Functions → Secrets)
-   - `VERTEX_PROJECT_ID` — Google Cloud project ID
-   - `VERTEX_LOCATION` — e.g. `us-central1`
-   - `VERTEX_SERVICE_ACCOUNT_JSON` — full JSON key for a service account with Vertex AI User role
+   - **Preferred:** `GCP_API_KEY` — API key from [Google AI Studio](https://aistudio.google.com/apikey) (no IAM).
+   - **Or Vertex:** `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_SERVICE_ACCOUNT_JSON` (service account needs Vertex AI User).
 
 4. **Point the DM at Supabase**  
    In `dm.html` (or via a config file you load before the app), set:

@@ -1,118 +1,51 @@
-// Supabase Edge Function: invoke Vertex AI (Gemini) as the Tomb of Horrors DM.
-// Requires secrets: VERTEX_PROJECT_ID, VERTEX_LOCATION, VERTEX_SERVICE_ACCOUNT_JSON
+// Supabase Edge Function: invoke Gemini as the Tomb of Horrors DM.
+// Uses GCP_API_KEY (Generative Language API), same as ask-faculty.
 
-import { create } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
-const VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
-function getEnv(name: string): string {
-  const v = Deno.env.get(name);
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
-
-async function getGoogleAccessToken(): Promise<string> {
-  const raw = getEnv("VERTEX_SERVICE_ACCOUNT_JSON");
-  let key: Record<string, string>;
-  try {
-    key = JSON.parse(raw) as Record<string, string>;
-  } catch {
-    throw new Error("VERTEX_SERVICE_ACCOUNT_JSON is invalid JSON");
-  }
-  const clientEmail = key.client_email;
-  const privateKeyPem = key.private_key;
-  if (!clientEmail || !privateKeyPem) {
-    throw new Error("Service account JSON must include client_email and private_key");
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    iss: clientEmail,
-    sub: clientEmail,
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-    scope: VERTEX_SCOPE,
-  };
-
-  const pemContents = privateKeyPem
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\s/g, "");
-  const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
-  let cryptoKey: CryptoKey;
-  try {
-    cryptoKey = await crypto.subtle.importKey(
-      "pkcs8",
-      binaryKey,
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-  } catch (e) {
-    throw new Error("Failed to import private key: " + (e?.message ?? String(e)));
-  }
-
-  const jwt = await create(
-    { alg: "RS256", typ: "JWT" },
-    payload,
-    cryptoKey
-  );
-
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
+function jsonResponse(body: object, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
-  if (!tokenRes.ok) {
-    const t = await tokenRes.text();
-    throw new Error(`Google token error: ${tokenRes.status} ${t}`);
-  }
-  const tokenData = (await tokenRes.json()) as { access_token?: string };
-  if (!tokenData.access_token) throw new Error("No access_token in response");
-  return tokenData.access_token;
 }
 
-function vertexRole(role: string): "user" | "model" {
+function roleToGemini(role: string): "user" | "model" {
   return role === "dm" || role === "model" ? "model" : "user";
 }
 
 Deno.serve(async (req) => {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: CORS_HEADERS });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  let body: { messages?: { role: string; content: string }[]; moduleContext?: string };
   try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+    let body: { messages?: { role: string; content: string }[]; moduleContext?: string };
+    try {
+      body = (await req.json()) as typeof body;
+    } catch {
+      return jsonResponse({ error: "Invalid JSON body" }, 400);
+    }
 
-  const messages = body.messages ?? [];
-  const moduleContext = body.moduleContext ?? "";
+    const apiKey = Deno.env.get("GCP_API_KEY")?.trim();
+    if (!apiKey) {
+      return jsonResponse({ error: "GCP_API_KEY not set in Edge Function secrets" }, 500);
+    }
 
-  const systemInstruction = `You are the Dungeon Master. You narrate the world and what happens in it. Speak in first person as the DM. Describe only what the characters would see, hear, and know; never reveal traps, secret doors, or game mechanics. Keep responses concise and atmospheric (a few short paragraphs at most). Stay in character.
+    const messages = body.messages ?? [];
+    const moduleContext = body.moduleContext ?? "";
+
+    const systemInstruction = `You are the Dungeon Master. You narrate the world and what happens in it. Speak in first person as the DM. Describe only what the characters would see, hear, and know; never reveal traps, secret doors, or game mechanics. Keep responses concise and atmospheric (a few short paragraphs at most). Stay in character.
 
 Tell the story purely in-world. Do not mention the module, the adventure, the scenario, "this area", rulebooks, or any meta or out-of-character framing. Never say things like "in this module", "the adventure says", "area 3", or "as described in the key". Just describe the world and events as they happen.
 
@@ -122,64 +55,46 @@ The reference text below was extracted from a scan and may have OCR errors. Use 
 ${moduleContext.slice(0, 28000)}
 </reference>`;
 
-  const contents = messages.map((m) => ({
-    role: vertexRole(m.role),
-    parts: [{ text: m.content }],
-  }));
+    const contents = messages.map((m) => ({
+      role: roleToGemini(m.role),
+      parts: [{ text: m.content }],
+    }));
 
-  const projectId = getEnv("VERTEX_PROJECT_ID");
-  const location = getEnv("VERTEX_LOCATION");
-  const modelId = "gemini-1.5-flash";
-  const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: {
+          role: "user",
+          parts: [{ text: systemInstruction }],
+        },
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature: 0.7,
+        },
+      }),
+    });
 
-  let accessToken: string;
-  try {
-    accessToken = await getGoogleAccessToken();
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Gemini API error:", res.status, errText);
+      return jsonResponse({ error: "Gemini API error", detail: errText.slice(0, 500) }, 502);
+    }
+
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const parts = data.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.map((p) => p.text ?? "").join("").trim() || "(No response.)";
+
+    return jsonResponse({ content: text }, 200);
   } catch (e) {
-    console.error(e);
-    return new Response(
-      JSON.stringify({ error: "Vertex auth failed", detail: String(e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    console.error("dm-invoke error:", e);
+    return jsonResponse(
+      { error: "Internal server error", detail: e instanceof Error ? e.message : String(e) },
+      500
     );
   }
-
-  const vertexBody = {
-    contents,
-    systemInstruction: {
-      role: "user",
-      parts: [{ text: systemInstruction }],
-    },
-    generationConfig: {
-      maxOutputTokens: 4096,
-      temperature: 0.7,
-    },
-  };
-
-  const vertexRes = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(vertexBody),
-  });
-
-  if (!vertexRes.ok) {
-    const errText = await vertexRes.text();
-    console.error("Vertex API error:", vertexRes.status, errText);
-    return new Response(
-      JSON.stringify({ error: "Vertex API error", detail: errText.slice(0, 500) }),
-      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  const vertexData = (await vertexRes.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const parts = vertexData.candidates?.[0]?.content?.parts ?? [];
-  const text = parts.map((p) => p.text ?? "").join("").trim() || "(No response.)";
-
-  return new Response(JSON.stringify({ content: text }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 });
